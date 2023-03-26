@@ -106,9 +106,7 @@ namespace GUIDEMO
         /// <param name="Frame">The frame to get the opcode from</param>
         /// <returns>The opcode of the frame</returns>
         public static EOpcodeType GetFrameOpcode(byte[] Frame)
-        {
-            return (EOpcodeType)Frame[0] - 128;
-        }
+        { return (EOpcodeType)Frame[0] - 128; }
 
         /// <summary>Gets the decoded frame data from the given byte array</summary>
         /// <param name="Data">The byte array to decode</param>
@@ -143,7 +141,6 @@ namespace GUIDEMO
         {
             if (Buffer == null) return false;
             if (Buffer.Length <= 0) return false;
-
             return true;
         }
 
@@ -227,9 +224,7 @@ namespace GUIDEMO
         /// <param name="Key">The SHA1 hashed key to respond with</param>
         /// <returns></returns>
         public static string GetHandshakeResponse(string Key)
-        {
-            return string.Format("HTTP/1.1 101 Switching Protocols\nUpgrade: WebSocket\nConnection: Upgrade\nSec-WebSocket-Accept: {0}\r\n\r\n", Key);
-        }
+        { return string.Format("HTTP/1.1 101 Switching Protocols\nUpgrade: WebSocket\nConnection: Upgrade\nSec-WebSocket-Accept: {0}\r\n\r\n", Key); }
 
         /// <summary>Gets the WebSocket handshake updgrade key from the http request</summary>
         /// <param name="HttpRequest">The http request string to get the key from</param>
@@ -272,23 +267,14 @@ namespace GUIDEMO
     public partial class Client
     {
 
-        #region Fields
-
         ///<summary>The socket of the connected client</summary>
         private Socket _socket;
-
         ///<summary>The guid of the connected client</summary>
         private string _guid;
-
         /// <summary>The server that the client is connected to</summary>
         private Server _server;
-
         /// <summary>If the server has sent a ping to the client and is waiting for a pong</summary>
         private bool _bIsWaitingForPong;
-
-        #endregion
-
-        #region Class Events
 
         /// <summary>Create a new object for a connected client</summary>
         /// <param name="Server">The server object instance that the client is connected to</param>
@@ -298,57 +284,29 @@ namespace GUIDEMO
             this._server = Server;
             this._socket = Socket;
             this._guid = Helpers.CreateGuid("client");
-
             // Start to detect incomming messages 
             GetSocket().BeginReceive(new byte[] { 0 }, 0, 0, SocketFlags.None, messageCallback, null);
         }
 
-        #endregion
-
-        #region Field Getters
-
         /// <summary>Gets the guid of the connected client</summary>
         /// <returns>The GUID of the client</returns>
-        public string GetGuid()
-        {
-            return _guid;
-        }
+        public string GetGuid(){ return _guid; }
 
         ///<summary>Gets the socket of the connected client</summary>
         ///<returns>The socket of the client</return>
-        public Socket GetSocket()
-        {
-            return _socket;
-        }
+        public Socket GetSocket(){ return _socket; }
 
         /// <summary>The socket that this client is connected to</summary>
         /// <returns>Listen socket</returns>
-        public Server GetServer()
-        {
-            return _server;
-        }
+        public Server GetServer(){ return _server; }
 
         /// <summary>Gets if the server is waiting for a pong response</summary>
         /// <returns>If the server is waiting for a pong response</returns>
-        public bool GetIsWaitingForPong()
-        {
-            return _bIsWaitingForPong;
-        }
-
-        #endregion
-
-        #region Field Setters
+        public bool GetIsWaitingForPong(){ return _bIsWaitingForPong; }
 
         /// <summary>Sets if the server is waiting for a pong response</summary>
         /// <param name="bIsWaitingForPong">If the server is waiting for a pong response</param>
-        public void SetIsWaitingForPong(bool bIsWaitingForPong)
-        {
-            _bIsWaitingForPong = bIsWaitingForPong;
-        }
-
-        #endregion
-
-        #region Methods
+        public void SetIsWaitingForPong(bool bIsWaitingForPong){ _bIsWaitingForPong = bIsWaitingForPong; }
 
         /// <summary>Called when a message was received from the client</summary>
         private void messageCallback(IAsyncResult AsyncResult)
@@ -389,6 +347,75 @@ namespace GUIDEMO
             }
         }
 
+      
+    }
+
+    public class SocketServer
+    {
+        private static TcpListener serverSocket;
+        public static void StartServer()
+        {
+            /*            IPHostEntry ipHostEntry = Dns.GetHostEntry("localhost");
+            Console.WriteLine(ipHostEntry.ToString());
+            IPAddress ipAddress = ipHostEntry.AddressList[0];*/
+            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
+            serverSocket = new TcpListener(ipEndPoint);
+            serverSocket.Start();
+            Console.WriteLine("Asynchonous server socket is listening at: " + ipEndPoint.Address.ToString());
+            WaitForClients();
+        }
+
+        private static void WaitForClients()
+        {
+            serverSocket.BeginAcceptTcpClient(new System.AsyncCallback(OnClientConnected), null);
+        }
+
+        private static void OnClientConnected(IAsyncResult asyncResult)
+        {
+            try
+            {
+                TcpClient clientSocket = serverSocket.EndAcceptTcpClient(asyncResult);
+                if (clientSocket != null)
+                    Console.WriteLine("Received connection request from: " + clientSocket.Client.RemoteEndPoint.ToString());
+                HandleClientRequest(clientSocket);
+            }
+            catch
+            {
+                throw;
+            }
+            WaitForClients();
+        }
+
+        private static void HandleClientRequest(TcpClient clientSocket)
+        {
+            Console.WriteLine("HANDLING CLIENT REQUEST");
+        }
+
+    }
+
+
+    public class IDGSocketClient
+    {
+        System.Net.Sockets.TcpClient clientSocket = new System.Net.Sockets.TcpClient();
+        NetworkStream networkStream;
+        public void Connect(string ipAddress, int port)
+        {
+            clientSocket.Connect(ipAddress, port);
+        }
+        public void Send(string data)
+        {
+            //Write code here to send data
+        }
+        public void Close()
+        {
+            clientSocket.Close();
+        }
+        public string Receive()
+        {
+            Console.WriteLine("RECEIVED!");
+            return "RECEIVED!";
+        }
     }
 
     public class OnMessageReceivedHandler : EventArgs
@@ -510,20 +537,13 @@ namespace GUIDEMO
     ///</summary>
     public partial class Server
     {
-        #region Fields
 
         /// <summary>The listen socket (server socket)</summary>
         private Socket _socket;
-
         /// <summary>The listen ip end point of the server</summary>
         private IPEndPoint _endPoint;
-
         /// <summary>The connected clients to the server </summary>
         private List<Client> _clients = new List<Client>();
-
-        #endregion
-
-        #region Class Events
 
         /// <summary>Create and start a new listen socket server</summary>
         /// <param name="EndPoint">The listen endpoint of the server</param>
@@ -542,10 +562,6 @@ namespace GUIDEMO
             // Start the server
             start();
         }
-
-        #endregion
-
-        #region Field Getters
 
         /// <summary>Gets the listen socket</summary>
         /// <returns>The listen socket</returns>
@@ -585,7 +601,6 @@ namespace GUIDEMO
         /// <summary>Get the number of clients that are connected to the server</summary>
         /// <returns>The number of connected clients</returns>
         public int GetConnectedClientCount(){ return _clients.Count; }
-
 
         /// <summary>
         /// Starts the listen server when a server object is created
@@ -669,10 +684,6 @@ namespace GUIDEMO
             OnClientDisconnected(this, new OnClientDisconnectedHandler(Client));
         }
 
-        #endregion
-
-        #region Server Events
-
         /// <summary>Send a message to a connected client</summary>
         /// <param name="Client">The client to send the data to</param>
         /// <param name="Data">The data to send the client</param>
@@ -691,41 +702,92 @@ namespace GUIDEMO
 
         /// <summary>Called after a message was sent</summary>
         public event EventHandler<OnSendMessageHandler> OnSendMessage;
-
         /// <summary>Called when a client was connected to the server (after handshake)</summary>
         public event EventHandler<OnClientConnectedHandler> OnClientConnected;
-
         /// <summary>Called when a message was received from a connected client</summary>
         public event EventHandler<OnMessageReceivedHandler> OnMessageReceived;
-
         /// <summary>Called when a client disconnected</summary>
         public event EventHandler<OnClientDisconnectedHandler> OnClientDisconnected;
 
-        #endregion
-    }
 
-
-    public class HexadecimalEncoding
+        public static void StartServer()
         {
+            // Get Host IP Address that is used to establish a connection
+            // In this case, we get one IP address of localhost that is IP : 127.0.0.1
+            // If a host has multiple addresses, you will get a list of addresses
+            IPHostEntry host = Dns.GetHostEntry("localhost");
+            IPAddress ipAddress = host.AddressList[0];
+            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 3000);
 
-
-            public static string ByteArrayToString(byte[] ba)
+            try
             {
-                StringBuilder hex = new StringBuilder(ba.Length * 2);
-                foreach (byte b in ba)
-                    hex.AppendFormat("{0:x2}", b);
-                return hex.ToString();
+
+                // Create a Socket that will use Tcp protocol
+                Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                // A Socket must be associated with an endpoint using the Bind method
+                listener.Bind(localEndPoint);
+                // Specify how many requests a Socket can listen before it gives Server busy response.
+                // We will listen 10 requests at a time
+                listener.Listen(10);
+
+                Console.WriteLine("Waiting for a connection...");
+                Socket handler = listener.Accept();
+
+                // Incoming data from the client.
+                string data = null;
+                byte[] bytes = null;
+
+                while (true)
+                {
+                    bytes = new byte[1024];
+                    int bytesRec = handler.Receive(bytes);
+                    data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                    if (data.IndexOf("<EOF>") > -1)
+                    {
+                        break;
+                    }
+                }
+
+                Console.WriteLine("Text received : {0}", data);
+
+                byte[] msg = Encoding.ASCII.GetBytes(data);
+                handler.Send(msg);
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
             }
-            public static byte[] StringToByteArray(String hex)
+            catch (Exception e)
             {
-                int NumberChars = hex.Length;
-                byte[] bytes = new byte[NumberChars / 2];
-                for (int i = 0; i < NumberChars; i += 2)
-                    bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-                return bytes;
+                Console.WriteLine(e.ToString());
             }
 
+            Console.WriteLine("\n Press any key to continue...");
+            Console.ReadKey();
         }
+    }
+    
+
+    
+
+
+public class HexadecimalEncoding
+    {
+        public static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
+        public static byte[] StringToByteArray(String hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
+
+    }
 
 
 
@@ -1090,17 +1152,15 @@ namespace GUIDEMO
                 theForm.SetLabel3Text = "CREATING NODE";
                 Console.WriteLine("CREATING NODE");
 
-
+                //Server.StartServer();
+                SocketServer.StartServer();
                 // Create a listen server on localhost with port 80
-                Server server = new Server(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 3000));
+                /*                Server server = new Server(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 80));
                 //bind event functions
                 server.OnClientConnected += (object sender, OnClientConnectedHandler e) => { Console.WriteLine("Client with GUID: {0} Connected!", e.GetClient().GetGuid()); };
-
                 server.OnClientDisconnected += (object sender, OnClientDisconnectedHandler e) => { Console.WriteLine("Client {0} Disconnected", e.GetClient().GetGuid()); };
-
                 server.OnMessageReceived += (object sender, OnMessageReceivedHandler e) => { Console.WriteLine("Received Message: '{1}' from client: {0}", e.GetClient().GetGuid(), e.GetMessage()); };
-
-                server.OnSendMessage += (object sender, OnSendMessageHandler e) => { Console.WriteLine("Sent message: '{0}' to client {1}", e.GetMessage(), e.GetClient().GetGuid()); };
+                server.OnSendMessage += (object sender, OnSendMessageHandler e) => { Console.WriteLine("Sent message: '{0}' to client {1}", e.GetMessage(), e.GetClient().GetGuid()); };*/
 
                 Console.WriteLine("CREATING GENESIS BLOCK");
                 Block.createGenesisBlock();
