@@ -54,7 +54,7 @@ namespace GUIDEMO
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("CLIENT CONNECTING TO NETWORK");
+            Console.WriteLine("CLIENT CONNECTING TO SELF SERVER NODE");
             //Client thisClient = new Client("127.0.0.1");
             IDGSocketClient client = new IDGSocketClient();
             client.Connect("localhost", 3000);

@@ -263,7 +263,6 @@ namespace GUIDEMO
         }
     }
 
-
     public partial class Client
     {
 
@@ -350,6 +349,7 @@ namespace GUIDEMO
       
     }
 
+
     public class SocketServer
     {
         private static TcpListener serverSocket;
@@ -376,14 +376,10 @@ namespace GUIDEMO
             try
             {
                 TcpClient clientSocket = serverSocket.EndAcceptTcpClient(asyncResult);
-                if (clientSocket != null)
-                    Console.WriteLine("Received connection request from: " + clientSocket.Client.RemoteEndPoint.ToString());
+                if (clientSocket != null) { Console.WriteLine("Received connection request from: " + clientSocket.Client.RemoteEndPoint.ToString()); }
                 HandleClientRequest(clientSocket);
             }
-            catch
-            {
-                throw;
-            }
+            catch{ throw; }
             WaitForClients();
         }
 
@@ -391,7 +387,6 @@ namespace GUIDEMO
         {
             Console.WriteLine("HANDLING CLIENT REQUEST");
         }
-
     }
 
 
@@ -768,8 +763,7 @@ namespace GUIDEMO
 
     
 
-
-public class HexadecimalEncoding
+    public class HexadecimalEncoding
     {
         public static string ByteArrayToString(byte[] ba)
         {
@@ -793,10 +787,14 @@ public class HexadecimalEncoding
 
     public class Transaction
     {
+        public string TxId { get; set; }
         public uint TimeStamp { get; set; }
         public string InitiatorAddress { get; set; }
         public string RecipientAddress { get; set; }
         public double Amount { get; set; }
+        public string NameOfEntityOrTargetBill { get; set; }
+        public string PartOfSpeech { get; set; }
+        public string Desc { get; set; }
         public enum transactionTypes
         {
             None = 0b_0000_0000,  // 0
@@ -823,18 +821,22 @@ public class HexadecimalEncoding
         }
 
         //TRANSACTION RETURNS STRING
-        public Transaction(string fromAddress, string toAddress, double amount)
+        public Transaction(string fromAddress, string toAddress, double amount, string name, string partofspeech, string desc, string action)
         {
             InitiatorAddress = fromAddress;
             RecipientAddress = toAddress;
             Amount = amount;
+            NameOfEntityOrTargetBill = name;
+            PartOfSpeech = partofspeech;
+            Desc = desc;
             Console.WriteLine(DateTime.UtcNow);
+            TxId = Block.GenHash(this.ToString());
+            Console.WriteLine(TxId);
             //DateTimeOffset.FromUnixTimeSeconds(time);
             TimeStamp = ToDosDateTime(DateTime.UtcNow);
             Console.WriteLine(TimeStamp.ToString());
-           
         }
-
+        
         public UInt32 ToDosDateTime(DateTime dateTime)
         {
             DateTime startTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
@@ -842,13 +844,10 @@ public class HexadecimalEncoding
             UInt32 time_t = Convert.ToUInt32(Math.Abs(currTime.TotalSeconds));
             return time_t;
         }
-
     }
 
     public class Block
     {
-
-
 
         /*        public class BlockHeader
         {
@@ -964,9 +963,11 @@ public class HexadecimalEncoding
 
         public static string createGenesisBlock()
         {
-            Transaction trx1 = new Transaction("12341241", "2141412412", 0.24);
-           // MiningNode.PendingTransactions.Add(trx1);
-            Transaction trx2 = new Transaction("12341241", "666453343", 0.44);
+            Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            Transaction trx1 = new Transaction("00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "NOUN", "The ID of the person who created the genesis block.", "CREATE");
+            // MiningNode.PendingTransactions.Add(trx1);
+            Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
             var jsonString = JsonConvert.SerializeObject(trx1);
             Console.WriteLine(jsonString);
             return "test";
@@ -993,9 +994,6 @@ public class HexadecimalEncoding
         public IList<Transaction> PendingTransactions = new List<Transaction>();
         public IList<Block> Chain = new List<Block>();
         public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
-
-
-
 
         public void SaveBinaryFile()
         {
@@ -1098,9 +1096,6 @@ public class HexadecimalEncoding
 
     internal static class Program
     {
-
-
-
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -1110,9 +1105,11 @@ public class HexadecimalEncoding
 
             Form1 theForm = new Form1();
             Console.WriteLine("PROGRAM MAIN");
-            //Block thisBlock = new Block();
             MiningNode currentMiningNode = new MiningNode();
-            //public string path = currentMiningNode.fileName; 
+            theForm.SetLabel3Text = "CREATING SERVER NODE";
+            Console.WriteLine("CREATING SERVER NODE");
+            SocketServer.StartServer();
+
             Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
             //IF NODES FOUND
             if(1 > 2)
@@ -1122,10 +1119,10 @@ public class HexadecimalEncoding
                 uint currentBlockheight = 0;
                 for (int i = 0; i < currentBlockheight; i++)
                 {
-                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".dat"))
+                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
                     {
                         Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
-                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\0.dat", FileMode.Open)));
+                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\0.bin", FileMode.Open)));
                     }
                     else
                     {
@@ -1139,7 +1136,6 @@ public class HexadecimalEncoding
                         hash = Block.GenHash(str); Console.WriteLine("Hash: {0}", hash);
                         Console.WriteLine("Prev Length: {0}", str.Length);
                         Console.WriteLine("Length: {0}", hash.Length);
-
                     }
                 }
             }
@@ -1148,33 +1144,33 @@ public class HexadecimalEncoding
                 theForm.SetLabel3Text = "NO NODES FOUND";
                 //Form1().label3.Text = "NO NODES FOUND";
                 Console.WriteLine("NO NODES FOUND");
-                //if blockchain doesn't exist yet, create new one
-                theForm.SetLabel3Text = "CREATING NODE";
-                Console.WriteLine("CREATING NODE");
+                //CHECK IF ANY EXISTING BLOCK FILES SAVED LOCALLY
+                uint currentBlockheight = 0;
+                for (int i = 0; i <= currentBlockheight; i++)
+                {
+                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
+                    {
+                        Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
+                        theForm.SetLabel3Text = "BLOCK FILE " + i.ToString() + " EXISTS";
+                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\"+i.ToString()+".bin", FileMode.Open))) ;
+                    }
+                    else
+                    {
+                        Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS THE MOTHERNODE");
+                        theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
+                        Console.WriteLine("CREATING GENESIS BLOCK");
+                        Block.createGenesisBlock();
+                        Console.WriteLine("SAVING GENESIS BINARY FILE");
+                        currentMiningNode.SaveBinaryFile();
 
-                //Server.StartServer();
-                SocketServer.StartServer();
-                // Create a listen server on localhost with port 80
-                /*                Server server = new Server(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 80));
-                //bind event functions
-                server.OnClientConnected += (object sender, OnClientConnectedHandler e) => { Console.WriteLine("Client with GUID: {0} Connected!", e.GetClient().GetGuid()); };
-                server.OnClientDisconnected += (object sender, OnClientDisconnectedHandler e) => { Console.WriteLine("Client {0} Disconnected", e.GetClient().GetGuid()); };
-                server.OnMessageReceived += (object sender, OnMessageReceivedHandler e) => { Console.WriteLine("Received Message: '{1}' from client: {0}", e.GetClient().GetGuid(), e.GetMessage()); };
-                server.OnSendMessage += (object sender, OnSendMessageHandler e) => { Console.WriteLine("Sent message: '{0}' to client {1}", e.GetMessage(), e.GetClient().GetGuid()); };*/
-
-                Console.WriteLine("CREATING GENESIS BLOCK");
-                Block.createGenesisBlock();
-                Console.WriteLine("SAVING GENESIS BINARY FILE");
-                currentMiningNode.SaveBinaryFile();
+                    }
+                }
             }
-
 
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
-            
             Application.Run(theForm);
-
         }
     }
 }
