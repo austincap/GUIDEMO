@@ -62,14 +62,23 @@ namespace GUIDEMO
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //set up mother node
+            //set up genesis node
             //empty blockchaindata folder
             Blockchain myblockchain = new Blockchain();
             //int difficultyTest = myblockchain.Difficulty;
 
-            Console.WriteLine("TEST");
+            Console.WriteLine("SETTING UP GENESIS NODE");
             Console.WriteLine(myblockchain.Difficulty);
         }
 
+        private void button5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
