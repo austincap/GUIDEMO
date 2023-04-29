@@ -14,6 +14,7 @@ using System.Runtime.Serialization;
 using System.Net.Sockets;
 using System.Net;
 using System.Reflection.Emit;
+using static GUIDEMO.Transaction;
 
 
 namespace GUIDEMO
@@ -760,7 +761,12 @@ namespace GUIDEMO
         }
     }
     
-
+    public class DNSseedServer
+    {
+        List<string> addresses = new List<string>() {"26.67.255.200", "192.168.1.24" };
+        //addresses.Add("127.0.0.1");
+        //addresses.Add("192.168.1.24");
+    }
     
 
     public class HexadecimalEncoding
@@ -795,6 +801,9 @@ namespace GUIDEMO
         public string NameOfEntityOrTargetBill { get; set; }
         public string PartOfSpeech { get; set; }
         public string Desc { get; set; }
+        public TransactionSubType TxSubType { get; set; }
+        public string FromAddress { get; set; }
+        public string ToAddress { get; set; }
         public enum transactionTypes
         {
             None = 0b_0000_0000,  // 0
@@ -804,30 +813,56 @@ namespace GUIDEMO
             CANCEL = 0b_0000_1000,  // 8
             Friday = 0b_0001_0000,  // 16
             Saturday = 0b_0010_0000,  // 32
-            Sunday = 0b_0100_0000,  // 64
-            Weekend = Saturday | None
+            Sunday = 0b_0100_0000  // 64
         }
-        public enum transactionSubTypes
+        public enum TransactionSubTypes
         {
             None = 0b_0000_0000,  // 0
-            USER = 0b_0000_0001,  // 1
-            RULE = 0b_0000_0010,  // 2
-            DISPUTE = 0b_0000_0100,  // 4
-            ASSET = 0b_0000_1000,  // 8
-            ENTITY = 0b_0001_0000,  // 16
-            PERMISSION = 0b_0010_0000,  // 32
-            Sunday = 0b_0100_0000,  // 64
-            Weekend = None | Sunday
+            CITIZEN = 0b_0000_0001,  // 1 COLLECTIVE MEMBER
+            RULE = 0b_0000_0010,  // 2 RULE FOR COLLECTIVE TO FOLLOW
+            DISPUTE = 0b_0000_0100,  // 4 DISPUTE BETWEEN TWO COLLECTIVE MEMBERS
+            ASSET = 0b_0000_1000,  // 8 PHYSICAL DISCRETE POSSESSION
+            ENTITY = 0b_0001_0000,  // 16 ABSTRACT ORGANIZATION
+            PERMISSION = 0b_0010_0000,  // 32 PERMIT 
+            DEFINITION = 0b_0100_0000,  // 64 LEGAL MEANING OF TERM
+            ELECTION = 0b_1000_0000   // 128 COMPETITION TO SEE HOW CAN GAIN MOST VOTES
         }
 
+        public enum TransactionSubType { None, CITIZEN, DISPUTE, ASSET, ORGANIZATION, PERMISSION, DEFINITION, ELECTION }
+        
+
         //TRANSACTION RETURNS STRING
-        public Transaction(string fromAddress, string toAddress, double amount, string name, string partofspeech, string desc, string action)
+        public Transaction(TransactionSubType txSubType, string fromAddress, string toAddress, double amount, string name, string desc, string action)
         {
+            switch (txSubType)
+            {
+                case TransactionSubType.None:
+                    break;
+                case TransactionSubType.CITIZEN:
+                     //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    break;
+                case TransactionSubType.DISPUTE:
+                    // USERID OF DISPUTE INITIATOR, ID OF DEFENDANT, AMOUNT POSTED, NAME OF DISPUTE, DESCRIPTION OF DISPUTE
+                    break;
+                case TransactionSubType.ASSET:
+                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF ASSET OWNER, NEW ASSET ID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    break;
+                case TransactionSubType.ORGANIZATION:
+                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    break;
+                case TransactionSubType.PERMISSION:
+                    break;
+                case TransactionSubType.DEFINITION:
+                    break;
+                case TransactionSubType.ELECTION:
+                    break;
+
+            }
+            TxSubType = txSubType;
             InitiatorAddress = fromAddress;
             RecipientAddress = toAddress;
             Amount = amount;
             NameOfEntityOrTargetBill = name;
-            PartOfSpeech = partofspeech;
             Desc = desc;
             Console.WriteLine(DateTime.UtcNow);
             TxId = Block.GenHash(this.ToString());
@@ -961,15 +996,17 @@ namespace GUIDEMO
                 }*/
 
 
-        public static string createGenesisBlock()
+        public static string createGenesisBlock(MiningNode theMiningNode)
         {
             Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-            Transaction trx1 = new Transaction("00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "NOUN", "The ID of the person who created the genesis block.", "CREATE");
-            // MiningNode.PendingTransactions.Add(trx1);
-            Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
+            Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
+            theMiningNode.PendingTransactions.Add(trx1);
+            //Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
+            //Transaction trx1 = new Transaction("0000000000000000", GenesisUserID, );
             var jsonString = JsonConvert.SerializeObject(trx1);
             Console.WriteLine(jsonString);
+            
             return "test";
         }
 
@@ -992,7 +1029,7 @@ namespace GUIDEMO
     {
         public static string fileName = ".\\blockchaindata\\0.dat";
         public IList<Transaction> PendingTransactions = new List<Transaction>();
-        public IList<Block> Chain = new List<Block>();
+
         public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
 
         public void SaveBinaryFile()
@@ -1106,9 +1143,19 @@ namespace GUIDEMO
             Form1 theForm = new Form1();
             Console.WriteLine("PROGRAM MAIN");
             MiningNode currentMiningNode = new MiningNode();
+            theForm.SetLabel3Text = "CREATING MINING NODE";
+            /*            if (theForm.GetMiningNodeCheckedStatus==true)
+            {
+                MiningNode currentMiningNode = new MiningNode();
+                theForm.SetLabel3Text = "CREATING MINING NODE";
+            }*/
+       
             theForm.SetLabel3Text = "CREATING SERVER NODE";
-            Console.WriteLine("CREATING SERVER NODE");
             SocketServer.StartServer();
+
+            theForm.SetLabel3Text = "CREATING CLIENT";
+            IDGSocketClient client = new IDGSocketClient();
+            //client.Connect("192.168.1.7", 80);
 
             Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
             //IF NODES FOUND
@@ -1156,12 +1203,19 @@ namespace GUIDEMO
                     }
                     else
                     {
-                        Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS THE MOTHERNODE");
-                        theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
-                        Console.WriteLine("CREATING GENESIS BLOCK");
-                        Block.createGenesisBlock();
-                        Console.WriteLine("SAVING GENESIS BINARY FILE");
-                        currentMiningNode.SaveBinaryFile();
+                        if (theForm.GetGenesisNodeCheckedStatus == true)
+                        {
+                            Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
+                            theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
+                            Console.WriteLine("CREATING GENESIS BLOCK");
+                            Block.createGenesisBlock(currentMiningNode);
+                            Console.WriteLine("SAVING GENESIS BINARY FILE");
+                            currentMiningNode.SaveBinaryFile();
+                        }
+                        else
+                        {
+
+                        }
 
                     }
                 }
