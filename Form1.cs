@@ -51,9 +51,16 @@ namespace GUIDEMO
         {
             get { return checkBox2.Checked; }
         }
-     
+        public Boolean GetDNSseedNodeCheckedStatus
+        {
+            get { return checkBox3.Checked; }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            //you always need to have a basic peer node to participate in network
+            this.checkBox4.Checked = true;
+            this.checkBox4.Enabled = false;
             //on load disable connect to network button until your node is set up
             this.button2.Enabled = false;
         }
@@ -78,14 +85,13 @@ namespace GUIDEMO
                 this.checkBox2.Enabled = false;
                 this.checkBox3.Checked = true;
                 this.checkBox3.Enabled = false;
-                this.checkBox4.Checked = true;
-                this.checkBox4.Enabled = false;
+                
             }
             else
             {
                 this.checkBox2.Enabled = true;
                 this.checkBox3.Enabled = true;
-                this.checkBox4.Enabled = true;
+                
             }
         }
 
@@ -133,6 +139,11 @@ namespace GUIDEMO
         private void button5_Click(object sender, EventArgs e)
         {
             //make transaction
+        }
+
+        private void checkBox4_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

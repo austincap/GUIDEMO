@@ -845,7 +845,7 @@ namespace GUIDEMO
                     // USERID OF DISPUTE INITIATOR, ID OF DEFENDANT, AMOUNT POSTED, NAME OF DISPUTE, DESCRIPTION OF DISPUTE
                     break;
                 case TransactionSubType.ASSET:
-                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF ASSET OWNER, NEW ASSET ID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF ASSET OWNER, NEW ASSET ID, AMOUNT OF VOTECOIN, NAME OF ASSET, ASSET DESCRIPTION)
                     break;
                 case TransactionSubType.ORGANIZATION:
                     //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
@@ -996,24 +996,7 @@ namespace GUIDEMO
                 }*/
 
 
-        public static string createGenesisBlock(MiningNode theMiningNode)
-        {
-            Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-            string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-            Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
-            theMiningNode.PendingTransactions.Add(trx1);
-            //Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
-            //Transaction trx1 = new Transaction("0000000000000000", GenesisUserID, );
-            var jsonString = JsonConvert.SerializeObject(trx1);
-            Console.WriteLine(jsonString);
-            
-            return "test";
-        }
 
-        public string SendOutCandidateBlock()
-        {
-            return "trin";
-        }
 
         public string SaveBlockFile(string filename)
         {
@@ -1023,15 +1006,12 @@ namespace GUIDEMO
 
     }
 
-
-
-    public class MiningNode
+    
+    // BARE BONES FUNCTIONALITY
+    public class BasicPeerNode
     {
         public static string fileName = ".\\blockchaindata\\0.dat";
-        public IList<Transaction> PendingTransactions = new List<Transaction>();
-
         public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
-
         public void SaveBinaryFile()
         {
             // Create a hashtable of values that will eventually be serialized.
@@ -1041,10 +1021,10 @@ namespace GUIDEMO
             addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
             addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
             //Create the stream to add object into it. 
-            
+
             try
             {
-                
+
                 pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
                 //Format the object as Binary  
                 System.IO.Stream ms = File.OpenWrite(pathString);
@@ -1108,12 +1088,50 @@ namespace GUIDEMO
             }
         }
 
+    }
+
+    public class MiningNode
+    {
+        
+        public IList<Transaction> PendingTransactions = new List<Transaction>();
+
+        public string SendOutCandidateBlock()
+        {
+            return "trin";
+        }
+
+
+
 
     }
 
 
-   
 
+    public class GenesisNode
+    {
+
+        public static string GenHash(string data)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(data);
+            byte[] hash = SHA256.Create().ComputeHash(bytes);
+            return HexadecimalEncoding.ByteArrayToString(bytes);
+        }
+
+
+        public static string createGenesisBlock(MiningNode theMiningNode)
+        {
+            Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
+            theMiningNode.PendingTransactions.Add(trx1);
+            //Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
+            //Transaction trx1 = new Transaction("0000000000000000", GenesisUserID, );
+            var jsonString = JsonConvert.SerializeObject(trx1);
+            Console.WriteLine(jsonString);
+
+            return "test";
+        }
+    }
 
     public class Blockchain
     {
@@ -1142,20 +1160,20 @@ namespace GUIDEMO
 
             Form1 theForm = new Form1();
             Console.WriteLine("PROGRAM MAIN");
-            MiningNode currentMiningNode = new MiningNode();
-            theForm.SetLabel3Text = "CREATING MINING NODE";
-            /*            if (theForm.GetMiningNodeCheckedStatus==true)
-            {
-                MiningNode currentMiningNode = new MiningNode();
-                theForm.SetLabel3Text = "CREATING MINING NODE";
-            }*/
+            BasicPeerNode curentBasicNode = new BasicPeerNode();
+            theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
+            //if (theForm.GetMiningNodeCheckedStatus==true)
+            //{
+            //    MiningNode currentMiningNode = new MiningNode();
+            //    theForm.SetLabel3Text = "CREATING MINING NODE";
+            //}
        
-            theForm.SetLabel3Text = "CREATING SERVER NODE";
+            theForm.SetLabel3Text = "CREATING SERVER";
             SocketServer.StartServer();
 
             theForm.SetLabel3Text = "CREATING CLIENT";
             IDGSocketClient client = new IDGSocketClient();
-            //client.Connect("192.168.1.7", 80);
+   
 
             Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
             //IF NODES FOUND
@@ -1190,7 +1208,7 @@ namespace GUIDEMO
             {
                 theForm.SetLabel3Text = "NO NODES FOUND";
                 //Form1().label3.Text = "NO NODES FOUND";
-                Console.WriteLine("NO NODES FOUND");
+                // Console.WriteLine("NO NODES FOUND");
                 //CHECK IF ANY EXISTING BLOCK FILES SAVED LOCALLY
                 uint currentBlockheight = 0;
                 for (int i = 0; i <= currentBlockheight; i++)
@@ -1203,18 +1221,26 @@ namespace GUIDEMO
                     }
                     else
                     {
+
                         if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
+                            theForm.SetLabel3Text = "CREATING MINING NODE";
+                            MiningNode currentMiningNode = new MiningNode();
+                            //Console.WriteLine("CREATING MINING BLOCK");
                             Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
                             theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
                             Console.WriteLine("CREATING GENESIS BLOCK");
-                            Block.createGenesisBlock(currentMiningNode);
+                            GenesisNode.createGenesisBlock(currentMiningNode);
                             Console.WriteLine("SAVING GENESIS BINARY FILE");
-                            currentMiningNode.SaveBinaryFile();
+                            curentBasicNode.SaveBinaryFile();
                         }
-                        else
+                        if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
 
+                        }
+                        if (theForm.GetDNSseedNodeCheckedStatus == true)
+                        {
+                            theForm.SetLabel3Text = "CREATING MINING NODE";
                         }
 
                     }

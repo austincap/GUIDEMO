@@ -239,10 +239,11 @@
             this.checkBox4.AutoSize = true;
             this.checkBox4.Location = new System.Drawing.Point(40, 182);
             this.checkBox4.Name = "checkBox4";
-            this.checkBox4.Size = new System.Drawing.Size(109, 17);
+            this.checkBox4.Size = new System.Drawing.Size(108, 17);
             this.checkBox4.TabIndex = 21;
-            this.checkBox4.Text = "lightweight node?";
+            this.checkBox4.Text = "basic peer node?";
             this.checkBox4.UseVisualStyleBackColor = true;
+            this.checkBox4.CheckedChanged += new System.EventHandler(this.checkBox4_CheckedChanged);
             // 
             // Form1
             // 
