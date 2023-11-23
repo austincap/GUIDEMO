@@ -15,7 +15,8 @@ using System.Net.Sockets;
 using System.Net;
 using System.Reflection.Emit;
 using static GUIDEMO.Transaction;
-
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
 
 namespace GUIDEMO
 {
@@ -360,15 +361,33 @@ namespace GUIDEMO
             Console.WriteLine(ipHostEntry.ToString());
             IPAddress ipAddress = ipHostEntry.AddressList[0];*/
             IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-            IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
-            serverSocket = new TcpListener(ipEndPoint);
-            serverSocket.Start();
-            Console.WriteLine("Asynchonous server socket is listening at: " + ipEndPoint.Address.ToString());
+            var porttry1 = 3000;
+            var porttry2 = 3001;
+            try
+            {
+                IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry1);
+                serverSocket = new TcpListener(ipEndPoint);
+                serverSocket.Start();
+                Console.WriteLine("Asynchonous server socket is listening at localhost port: " + porttry1.ToString());
+            }
+            catch (Exception e)
+            {
+                IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
+                serverSocket = new TcpListener(ipEndPoint);
+                serverSocket.Start();
+                Console.WriteLine("Asynchonous server socket is listening at localhost port: " + porttry2.ToString());
+            }
+            /*            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+                        IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
+                        serverSocket = new TcpListener(ipEndPoint);
+                        serverSocket.Start(); Console.WriteLine("Asynchonous server socket is listening at: " + ipEndPoint.Address.ToString());*/
+            
             WaitForClients();
         }
 
         private static void WaitForClients()
         {
+            Console.WriteLine("WAITING FOR CLIENTS");
             serverSocket.BeginAcceptTcpClient(new System.AsyncCallback(OnClientConnected), null);
         }
 
@@ -397,6 +416,7 @@ namespace GUIDEMO
         NetworkStream networkStream;
         public void Connect(string ipAddress, int port)
         {
+            Console.WriteLine("ATTEMPTING TO CONNECT");
             clientSocket.Connect(ipAddress, port);
         }
         public void Send(string data)
@@ -825,10 +845,10 @@ namespace GUIDEMO
             ENTITY = 0b_0001_0000,  // 16 ABSTRACT ORGANIZATION
             PERMISSION = 0b_0010_0000,  // 32 PERMIT 
             DEFINITION = 0b_0100_0000,  // 64 LEGAL MEANING OF TERM
-            ELECTION = 0b_1000_0000   // 128 COMPETITION TO SEE HOW CAN GAIN MOST VOTES
+            ELECTION = 0b_1000_0000   // 128 COMPETITION TO SEE WHO CAN GAIN MOST VOTES
         }
 
-        public enum TransactionSubType { None, CITIZEN, DISPUTE, ASSET, ORGANIZATION, PERMISSION, DEFINITION, ELECTION }
+        public enum TransactionSubType { None, CITIZEN, RULE, DISPUTE, ASSET, ORGANIZATION, PERMISSION, DEFINITION, ELECTION }
         
 
         //TRANSACTION RETURNS STRING
@@ -841,20 +861,27 @@ namespace GUIDEMO
                 case TransactionSubType.CITIZEN:
                      //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
                     break;
+                case TransactionSubType.RULE:
+                    //TXID, SUBTYTPE, USERID OF RULE INITIATOR, ID OF RULE, AMOUNT POSTED, NAME OF RULE, DESCRIPTION OF RULE, 
+                    break;
                 case TransactionSubType.DISPUTE:
-                    // USERID OF DISPUTE INITIATOR, ID OF DEFENDANT, AMOUNT POSTED, NAME OF DISPUTE, DESCRIPTION OF DISPUTE
+                    //TXID, SUBTYTPE, USERID OF DISPUTE INITIATOR, ID OF DEFENDANT, AMOUNT POSTED, NAME OF DISPUTE, DESCRIPTION OF DISPUTE
+                    //when other users vote (TXID, SUBTYPE, TXID OF DISPUTE, USERID OF SIDE YOU SUPPORT, AMOUNT YOU SUPPORT)
                     break;
                 case TransactionSubType.ASSET:
                     //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF ASSET OWNER, NEW ASSET ID, AMOUNT OF VOTECOIN, NAME OF ASSET, ASSET DESCRIPTION)
                     break;
                 case TransactionSubType.ORGANIZATION:
-                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW ORGANIZATION USERID, AMOUNT OF VOTECOIN, NAME OF ORGANIZATION, ORGANIZATION DESC)
                     break;
                 case TransactionSubType.PERMISSION:
+                    //(TXID, SUBTYPE, USERID OF CREATOR, PERMISSION ID, VOTECOIN, PERMISSION NAME, PERMISSION DESC)
                     break;
                 case TransactionSubType.DEFINITION:
+                    //TXID, SUBTYPE, USERID OF CREATOR, DEFINITION ID, VOTES, WORD, DEFINITION
                     break;
                 case TransactionSubType.ELECTION:
+                    //TXID, SUBTYPE, USERID OF CREATOR, ELECTION ID, VOTES, WORD, DESC
                     break;
 
             }
@@ -871,6 +898,8 @@ namespace GUIDEMO
             TimeStamp = ToDosDateTime(DateTime.UtcNow);
             Console.WriteLine(TimeStamp.ToString());
         }
+
+
         
         public UInt32 ToDosDateTime(DateTime dateTime)
         {
@@ -1012,6 +1041,9 @@ namespace GUIDEMO
     {
         public static string fileName = ".\\blockchaindata\\0.dat";
         public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
+        //public List<string> HardCodedNodes = new List<string>();
+        public IList<string> connectedNodes = new List<string>();
+        public int numberOfNodes = 0;
         public void SaveBinaryFile()
         {
             // Create a hashtable of values that will eventually be serialized.
@@ -1055,7 +1087,7 @@ namespace GUIDEMO
 
         }
 
-        public void LoadBinaryFile()
+        public static void LoadBinaryFile(Form2 form2)
         {
             // Declare the hashtable reference.
             Hashtable addresses = null;
@@ -1082,9 +1114,19 @@ namespace GUIDEMO
 
             // To prove that the table deserialized correctly,
             // display the key/value pairs.
+            var i = 0;
             foreach (DictionaryEntry de in addresses)
             {
-                Console.WriteLine("{0} lives at {1}.", de.Key, de.Value);
+                string entry = "txid: "+ de.Key + " represents " + de.Value;
+                System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+                label.AutoSize = true;
+                label.Text = String.Format(entry);
+                //Position label on screen
+                label.Left = 10;
+                label.Top = (i + 1) * 20;
+                form2.Controls.Add(label);
+                i += 1;
+                Console.WriteLine("txid: {0} represents {1}.", de.Key, de.Value);
             }
         }
 
@@ -1159,6 +1201,7 @@ namespace GUIDEMO
         {
 
             Form1 theForm = new Form1();
+            
             Console.WriteLine("PROGRAM MAIN");
             BasicPeerNode curentBasicNode = new BasicPeerNode();
             theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
@@ -1173,7 +1216,18 @@ namespace GUIDEMO
 
             theForm.SetLabel3Text = "CREATING CLIENT";
             IDGSocketClient client = new IDGSocketClient();
-   
+
+            //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
+            //ADD A TALLY FOR EACH CONNECTION AND ADD SERVER NODE TO LIST
+            try
+            {
+                client.Connect("127.0.0.1", 3000);
+            }
+            catch
+            {
+                client.Connect("127.0.0.1", 3001);
+            }
+            
 
             Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
             //IF NODES FOUND

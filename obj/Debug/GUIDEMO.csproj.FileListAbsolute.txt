@@ -12,3 +12,4 @@ C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.csproj.CopyComplete
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.exe
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.pdb
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Form1.resources
+C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Form2.resources
