@@ -368,14 +368,14 @@ namespace GUIDEMO
                 IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry1);
                 serverSocket = new TcpListener(ipEndPoint);
                 serverSocket.Start();
-                Console.WriteLine("Asynchonous server socket is listening at localhost port: " + porttry1.ToString());
+                Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry1.ToString());
             }
             catch (Exception e)
             {
                 IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
                 serverSocket = new TcpListener(ipEndPoint);
                 serverSocket.Start();
-                Console.WriteLine("Asynchonous server socket is listening at localhost port: " + porttry2.ToString());
+                Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry2.ToString());
             }
             /*            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
                         IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
@@ -387,7 +387,7 @@ namespace GUIDEMO
 
         private static void WaitForClients()
         {
-            Console.WriteLine("WAITING FOR CLIENTS");
+            Console.WriteLine("SERVER WAITING FOR CLIENTS");
             serverSocket.BeginAcceptTcpClient(new System.AsyncCallback(OnClientConnected), null);
         }
 
@@ -396,7 +396,7 @@ namespace GUIDEMO
             try
             {
                 TcpClient clientSocket = serverSocket.EndAcceptTcpClient(asyncResult);
-                if (clientSocket != null) { Console.WriteLine("Received connection request from: " + clientSocket.Client.RemoteEndPoint.ToString()); }
+                if (clientSocket != null) { Console.WriteLine("SERVER RECEIVED CONNECTION REQUEST FROM: " + clientSocket.Client.RemoteEndPoint.ToString()); }
                 HandleClientRequest(clientSocket);
             }
             catch{ throw; }
@@ -406,33 +406,66 @@ namespace GUIDEMO
         private static void HandleClientRequest(TcpClient clientSocket)
         {
             Console.WriteLine("HANDLING CLIENT REQUEST");
+
+            IDGSocketClient.Singleton.SuccessfulConnection();
+
         }
     }
 
 
     public class IDGSocketClient
     {
+        private static IDGSocketClient singleton = new IDGSocketClient();
+        private Form1 clientForm;
+        static IDGSocketClient()
+        {
+        }
+
+        private IDGSocketClient()
+        {
+        }
+
+        public static IDGSocketClient Singleton
+        {
+            get {  return singleton; }
+        }
         System.Net.Sockets.TcpClient clientSocket = new System.Net.Sockets.TcpClient();
         NetworkStream networkStream;
-        public void Connect(string ipAddress, int port)
+        public void Connect(string ipAddress, int port, Form1 theForm)
         {
-            Console.WriteLine("ATTEMPTING TO CONNECT");
+            this.clientForm = theForm;
+            Console.WriteLine("CLIENT SOCKET ATTEMPTING TO CONNECT");
             clientSocket.Connect(ipAddress, port);
+        }
+
+        public void SuccessfulConnection()
+        {
+            BasicPeerNode.Instance.connectedNodes.Add(this.ToString());
+            BasicPeerNode.Instance.numberOfNodes++;
+            Console.WriteLine(clientSocket.Client.RemoteEndPoint.ToString());
+            Console.WriteLine(BasicPeerNode.Instance.numberOfNodes.ToString());
+            this.Send("testdata");
+            BasicPeerNode.checkNetworkForNodes(clientForm);
         }
         public void Send(string data)
         {
             //Write code here to send data
+            Console.WriteLine("IDGSOCKETCLIENT SEND DATA: {0}", data);
         }
         public void Close()
         {
+            Console.WriteLine("CLIENT CLOSE SOCKET CONNECTION");
             clientSocket.Close();
         }
         public string Receive()
         {
-            Console.WriteLine("RECEIVED!");
+            Console.WriteLine("CLIENT RECEIVED MESSAGE");
             return "RECEIVED!";
         }
     }
+
+
+
 
     public class OnMessageReceivedHandler : EventArgs
     {
@@ -447,6 +480,7 @@ namespace GUIDEMO
         /// <param name="Message">The message the client sent</param>
         public OnMessageReceivedHandler(Client Client, string Message)
         {
+            Console.WriteLine("MESSAGE RECEIVED HANDLER");
             this._client = Client;
             this._message = Message;
         }
@@ -483,6 +517,7 @@ namespace GUIDEMO
         /// <param name="Message">The message that was sent to the client</param>
         public OnSendMessageHandler(Client Client, string Message)
         {
+            Console.WriteLine("SEND MESSAGE HANDLER");
             this._client = Client;
             this._message = Message;
         }
@@ -514,6 +549,7 @@ namespace GUIDEMO
         /// <param name="Client">The client that connected</param>
         public OnClientConnectedHandler(Client Client)
         {
+            Console.WriteLine("CLIENT CONNECTED HANDLER");
             this._client = Client;
         }
 
@@ -538,6 +574,7 @@ namespace GUIDEMO
         public OnClientDisconnectedHandler(Client Client)
         {
             this._client = Client;
+            Console.WriteLine("CLIENT DISCONNECTED HANDLER");
         }
 
         /// <summary>Gets the client that disconnected</summary>
@@ -551,6 +588,8 @@ namespace GUIDEMO
     ///<summary>
     /// Object for all listen servers
     ///</summary>
+
+
     public partial class Server
     {
 
@@ -1037,21 +1076,35 @@ namespace GUIDEMO
 
     
     // BARE BONES FUNCTIONALITY
-    public class BasicPeerNode
+    public sealed class BasicPeerNode
     {
+        private static BasicPeerNode instance = new BasicPeerNode();
+        static BasicPeerNode()
+        {
+        }
+
+        private BasicPeerNode()
+        {
+        }
+
+        public static BasicPeerNode Instance
+        {
+            get { return instance; }
+        }
+
         public static string fileName = ".\\blockchaindata\\0.dat";
         public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
         //public List<string> HardCodedNodes = new List<string>();
         public IList<string> connectedNodes = new List<string>();
         public int numberOfNodes = 0;
-        public void SaveBinaryFile()
+        public static void SaveBinaryFile()
         {
             // Create a hashtable of values that will eventually be serialized.
             Hashtable addresses = new Hashtable();
             string pathString = "blockchaindata";
-            addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
-            addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
-            addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
+            //addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
+            //addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
+            //addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
             //Create the stream to add object into it. 
 
             try
@@ -1117,7 +1170,10 @@ namespace GUIDEMO
             var i = 0;
             foreach (DictionaryEntry de in addresses)
             {
-                string entry = "txid: "+ de.Key + " represents " + de.Value;
+                string shortenedTxid = de.Key.ToString();
+                shortenedTxid = shortenedTxid.Substring(100);
+                //string entry = "txid: "+ de.Key + " represents " + de.Value;
+                string entry = "txid: " + shortenedTxid + " represents " + de.Value;
                 System.Windows.Forms.Label label = new System.Windows.Forms.Label();
                 label.AutoSize = true;
                 label.Text = String.Format(entry);
@@ -1127,6 +1183,82 @@ namespace GUIDEMO
                 form2.Controls.Add(label);
                 i += 1;
                 Console.WriteLine("txid: {0} represents {1}.", de.Key, de.Value);
+            }
+        }
+
+        public static void checkNetworkForNodes(Form1 theForm)
+        {
+            Console.WriteLine("CHECK NETWORK FOR NODES");
+            //ADD A TALLY FOR EACH CONNECTION AND ADD SERVER NODE TO LIST
+            Console.WriteLine(BasicPeerNode.Instance.numberOfNodes.ToString());
+            //IF NODES FOUND
+            if (BasicPeerNode.Instance.numberOfNodes > 0)
+            {
+                Console.WriteLine("NODES FOUND");
+                Console.WriteLine("GET LATEST BLOCKHEIGHT");
+                uint currentBlockheight = 0;
+                for (int i = 0; i < currentBlockheight; i++)
+                {
+                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
+                    {
+                        Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
+                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\0.bin", FileMode.Open))) ;
+                    }
+                    else
+                    {
+                        Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST");
+                        Console.WriteLine("DOWNLOADING FILE");
+                        // generate hash of str
+                        var str = "TESTING";
+                        var hash = Block.GenHash(str); Console.WriteLine("Hash: {0}", hash);
+                        Console.WriteLine("Prev Length: {0}", str.Length);
+                        Console.WriteLine("Length: {0}", hash.Length); str = "A hash function is any function that can be used to map data of arbitrary size to a fixed size value. The value that the hash function returns is called the hash value, hash code, digest, or simply hash.";// generate hash of str
+                        hash = Block.GenHash(str); Console.WriteLine("Hash: {0}", hash);
+                        Console.WriteLine("Prev Length: {0}", str.Length);
+                        Console.WriteLine("Length: {0}", hash.Length);
+                    }
+                }
+            }
+            else
+            {
+                theForm.SetLabel3Text = "NO NODES FOUND";
+                // Console.WriteLine("NO NODES FOUND");
+                //CHECK IF ANY EXISTING BLOCK FILES SAVED LOCALLY
+                uint currentBlockheight = 0;
+                for (int i = 0; i <= currentBlockheight; i++)
+                {
+                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
+                    {
+                        Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
+                        theForm.SetLabel3Text = "BLOCK FILE " + i.ToString() + " EXISTS";
+                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\" + i.ToString() + ".bin", FileMode.Open))) ;
+                    }
+                    else
+                    {
+
+                        if (theForm.GetGenesisNodeCheckedStatus == true)
+                        {
+                            theForm.SetLabel3Text = "CREATING MINING NODE";
+                            MiningNode currentMiningNode = new MiningNode();
+                            //Console.WriteLine("CREATING MINING BLOCK");
+                            Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
+                            theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
+                            Console.WriteLine("CREATING GENESIS BLOCK");
+                            GenesisNode.createGenesisBlock(currentMiningNode);
+                            Console.WriteLine("SAVING GENESIS BINARY FILE");
+                            BasicPeerNode.SaveBinaryFile();
+                        }
+                        if (theForm.GetGenesisNodeCheckedStatus == true)
+                        {
+
+                        }
+                        if (theForm.GetDNSseedNodeCheckedStatus == true)
+                        {
+                            theForm.SetLabel3Text = "CREATING MINING NODE";
+                        }
+
+                    }
+                }
             }
         }
 
@@ -1191,6 +1323,8 @@ namespace GUIDEMO
 
 
 
+
+
     internal static class Program
     {
         /// <summary>
@@ -1203,7 +1337,9 @@ namespace GUIDEMO
             Form1 theForm = new Form1();
             
             Console.WriteLine("PROGRAM MAIN");
-            BasicPeerNode curentBasicNode = new BasicPeerNode();
+            //BasicPeerNode currentBasicNode = new BasicPeerNode();
+
+            
             theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
             //if (theForm.GetMiningNodeCheckedStatus==true)
             //{
@@ -1215,95 +1351,23 @@ namespace GUIDEMO
             SocketServer.StartServer();
 
             theForm.SetLabel3Text = "CREATING CLIENT";
-            IDGSocketClient client = new IDGSocketClient();
-
+            //IDGSocketClient client = new IDGSocketClient();
             //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
-            //ADD A TALLY FOR EACH CONNECTION AND ADD SERVER NODE TO LIST
+
+            Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
             try
             {
-                client.Connect("127.0.0.1", 3000);
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, theForm);
             }
             catch
             {
-                client.Connect("127.0.0.1", 3001);
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, theForm);
             }
-            
-
-            Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
-            //IF NODES FOUND
-            if(1 > 2)
+            finally
             {
-                Console.WriteLine("NODES FOUND");
-                Console.WriteLine("GET LATEST BLOCKHEIGHT");
-                uint currentBlockheight = 0;
-                for (int i = 0; i < currentBlockheight; i++)
-                {
-                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
-                    {
-                        Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
-                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\0.bin", FileMode.Open)));
-                    }
-                    else
-                    {
-                        Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST");
-                        Console.WriteLine("DOWNLOADING FILE");
-                        // generate hash of str
-                        var str = "TESTING";
-                        var hash = Block.GenHash(str); Console.WriteLine("Hash: {0}", hash);
-                        Console.WriteLine("Prev Length: {0}", str.Length);
-                        Console.WriteLine("Length: {0}", hash.Length); str = "A hash function is any function that can be used to map data of arbitrary size to a fixed size value. The value that the hash function returns is called the hash value, hash code, digest, or simply hash.";// generate hash of str
-                        hash = Block.GenHash(str); Console.WriteLine("Hash: {0}", hash);
-                        Console.WriteLine("Prev Length: {0}", str.Length);
-                        Console.WriteLine("Length: {0}", hash.Length);
-                    }
-                }
-            }
-            else
-            {
-                theForm.SetLabel3Text = "NO NODES FOUND";
-                //Form1().label3.Text = "NO NODES FOUND";
-                // Console.WriteLine("NO NODES FOUND");
-                //CHECK IF ANY EXISTING BLOCK FILES SAVED LOCALLY
-                uint currentBlockheight = 0;
-                for (int i = 0; i <= currentBlockheight; i++)
-                {
-                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
-                    {
-                        Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
-                        theForm.SetLabel3Text = "BLOCK FILE " + i.ToString() + " EXISTS";
-                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\"+i.ToString()+".bin", FileMode.Open))) ;
-                    }
-                    else
-                    {
-
-                        if (theForm.GetGenesisNodeCheckedStatus == true)
-                        {
-                            theForm.SetLabel3Text = "CREATING MINING NODE";
-                            MiningNode currentMiningNode = new MiningNode();
-                            //Console.WriteLine("CREATING MINING BLOCK");
-                            Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
-                            theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
-                            Console.WriteLine("CREATING GENESIS BLOCK");
-                            GenesisNode.createGenesisBlock(currentMiningNode);
-                            Console.WriteLine("SAVING GENESIS BINARY FILE");
-                            curentBasicNode.SaveBinaryFile();
-                        }
-                        if (theForm.GetGenesisNodeCheckedStatus == true)
-                        {
-
-                        }
-                        if (theForm.GetDNSseedNodeCheckedStatus == true)
-                        {
-                            theForm.SetLabel3Text = "CREATING MINING NODE";
-                        }
-
-                    }
-                }
+       
             }
 
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
             Application.Run(theForm);
         }
     }
