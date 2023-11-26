@@ -17,6 +17,7 @@ using System.Reflection.Emit;
 using static GUIDEMO.Transaction;
 using static System.Net.WebRequestMethods;
 using File = System.IO.File;
+using System.Runtime.CompilerServices;
 
 namespace GUIDEMO
 {
@@ -372,6 +373,8 @@ namespace GUIDEMO
             }
             catch (Exception e)
             {
+                BasicPeerNode.storageFolderEndsIn1 = true;
+                BasicPeerNode.endingNumberOfFolder = "1";
                 IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
                 serverSocket = new TcpListener(ipEndPoint);
                 serverSocket.Start();
@@ -451,6 +454,11 @@ namespace GUIDEMO
         {
             //Write code here to send data
             Console.WriteLine("IDGSOCKETCLIENT SEND DATA: {0}", data);
+        }
+        public void RequestLatestBlockheight()
+        {
+            Console.WriteLine("CLIENT REQUEST BLOCKHEIGHT");
+
         }
         public void Close()
         {
@@ -1091,9 +1099,12 @@ namespace GUIDEMO
         {
             get { return instance; }
         }
-
-        public static string fileName = ".\\blockchaindata\\0.dat";
-        public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
+        public static Boolean storageFolderEndsIn1 = false;
+        public static string pathString = "blockchaindata";
+        public static string endingNumberOfFolder = "";
+        //public static string fileName = ".\\"+ pathString + "\\0.dat";
+        public static Boolean fullySynced = false;
+        //public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
         //public List<string> HardCodedNodes = new List<string>();
         public IList<string> connectedNodes = new List<string>();
         public int numberOfNodes = 0;
@@ -1101,7 +1112,7 @@ namespace GUIDEMO
         {
             // Create a hashtable of values that will eventually be serialized.
             Hashtable addresses = new Hashtable();
-            string pathString = "blockchaindata";
+            
             //addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
             //addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
             //addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
@@ -1109,8 +1120,15 @@ namespace GUIDEMO
 
             try
             {
-
-                pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+                if(storageFolderEndsIn1 == false)
+                {
+                    pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+                }
+                else
+                {
+                    pathString = System.IO.Path.Combine(".\\blockchaindata1", "0.bin");
+                }
+                
                 //Format the object as Binary  
                 System.IO.Stream ms = File.OpenWrite(pathString);
                 BinaryFormatter formatter = new BinaryFormatter();
@@ -1122,8 +1140,18 @@ namespace GUIDEMO
             }
             catch
             {
-                System.IO.Directory.CreateDirectory("blockchaindata");
-                pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+                Console.WriteLine("CREATING DIRECTORY AND BINARY FILE");
+                //CREATE DIRECTORY IF NOT FOUND
+                if (storageFolderEndsIn1 == false)
+                {
+                    System.IO.Directory.CreateDirectory("blockchaindata");
+                    pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+                }
+                else
+                {
+                    System.IO.Directory.CreateDirectory("blockchaindata1");
+                    pathString = System.IO.Path.Combine(".\\blockchaindata1", "0.bin");
+                }
                 //Format the object as Binary  
                 System.IO.Stream ms = File.OpenWrite(pathString);
                 BinaryFormatter formatter = new BinaryFormatter();
@@ -1146,7 +1174,8 @@ namespace GUIDEMO
             Hashtable addresses = null;
 
             // Open the file containing the data that you want to deserialize.
-            FileStream fs = new FileStream(".\\blockchaindata\\0.bin", FileMode.Open);
+            string testingFolderString = ".\\" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
+            FileStream fs = new FileStream(testingFolderString, FileMode.Open);
             try
             {
                 BinaryFormatter formatter = new BinaryFormatter();
@@ -1188,6 +1217,8 @@ namespace GUIDEMO
 
         public static void checkNetworkForNodes(Form1 theForm)
         {
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
+            string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\";
             Console.WriteLine("CHECK NETWORK FOR NODES");
             //ADD A TALLY FOR EACH CONNECTION AND ADD SERVER NODE TO LIST
             Console.WriteLine(BasicPeerNode.Instance.numberOfNodes.ToString());
@@ -1199,10 +1230,10 @@ namespace GUIDEMO
                 uint currentBlockheight = 0;
                 for (int i = 0; i < currentBlockheight; i++)
                 {
-                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
+                    if (File.Exists(testingFolderString2 + i.ToString() + ".bin"))
                     {
                         Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
-                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\0.bin", FileMode.Open))) ;
+                        using (BinaryReader b = new BinaryReader(File.Open(testingFolderString, FileMode.Open)));
                     }
                     else
                     {
@@ -1227,15 +1258,14 @@ namespace GUIDEMO
                 uint currentBlockheight = 0;
                 for (int i = 0; i <= currentBlockheight; i++)
                 {
-                    if (File.Exists(".\\blockchaindata\\" + i.ToString() + ".bin"))
+                    if (File.Exists(testingFolderString2 + i.ToString() + ".bin"))
                     {
                         Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
                         theForm.SetLabel3Text = "BLOCK FILE " + i.ToString() + " EXISTS";
-                        using (BinaryReader b = new BinaryReader(File.Open(".\\blockchaindata\\" + i.ToString() + ".bin", FileMode.Open))) ;
+                        using (BinaryReader b = new BinaryReader(File.Open(testingFolderString2 + i.ToString() + ".bin", FileMode.Open))) ;
                     }
                     else
                     {
-
                         if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
                             theForm.SetLabel3Text = "CREATING MINING NODE";
@@ -1256,7 +1286,6 @@ namespace GUIDEMO
                         {
                             theForm.SetLabel3Text = "CREATING MINING NODE";
                         }
-
                     }
                 }
             }
@@ -1350,23 +1379,7 @@ namespace GUIDEMO
             theForm.SetLabel3Text = "CREATING SERVER";
             SocketServer.StartServer();
 
-            theForm.SetLabel3Text = "CREATING CLIENT";
-            //IDGSocketClient client = new IDGSocketClient();
-            //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
-
-            Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
-            try
-            {
-                IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, theForm);
-            }
-            catch
-            {
-                IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, theForm);
-            }
-            finally
-            {
        
-            }
 
             Application.Run(theForm);
         }

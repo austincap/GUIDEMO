@@ -68,9 +68,9 @@ namespace GUIDEMO
         {
             //you always need to have a basic peer node to participate in network
             this.checkBox4.Checked = true;
-            this.checkBox4.Enabled = false;
+            this.checkBox4.Enabled = true;
             //on load disable connect to network button until your node is set up
-            this.button2.Enabled = false;
+            //this.button2.Enabled = false;
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -123,10 +123,20 @@ namespace GUIDEMO
         {
             //connect to network button
             Console.WriteLine("CLIENT CONNECTING TO SELF SERVER NODE");
-            // Client thisClient = new Client("127.0.0.1");
-            //IDGSocketClient client = new IDGSocketClient();
-            //client.Connect("localhost", 3000);
 
+            this.SetLabel3Text = "CREATING CLIENT";
+            //IDGSocketClient client = new IDGSocketClient();
+            //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
+            Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
+            if(BasicPeerNode.storageFolderEndsIn1 == true)
+            {
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, this);
+            }
+            else
+            {
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, this);
+            }
+                
         }
 
 
@@ -172,9 +182,10 @@ namespace GUIDEMO
             Transaction newTransaction = new Transaction(TransactionSubType.CITIZEN, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
 
             Hashtable addresses = null;
-
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
+            string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
             // Open the file containing the data that you want to deserialize.
-            FileStream fs = new FileStream(".\\blockchaindata\\0.bin", FileMode.Open);
+            FileStream fs = new FileStream(testingFolderString, FileMode.Open);
             BinaryFormatter formatter = new BinaryFormatter();
             try
             {
@@ -195,7 +206,7 @@ namespace GUIDEMO
             string txid = GenHash(txdata);
             addresses.Add(txid, txdata);
             
-            string pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+            string pathString = System.IO.Path.Combine(testingFolderString2, "0.bin");
             //Format the object as Binary  
             System.IO.Stream ms = File.OpenWrite(pathString);
             //It serialize the employee object  
