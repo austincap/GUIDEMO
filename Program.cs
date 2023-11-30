@@ -18,6 +18,7 @@ using static GUIDEMO.Transaction;
 using static System.Net.WebRequestMethods;
 using File = System.IO.File;
 using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 namespace GUIDEMO
 {
@@ -292,23 +293,23 @@ namespace GUIDEMO
 
         /// <summary>Gets the guid of the connected client</summary>
         /// <returns>The GUID of the client</returns>
-        public string GetGuid(){ return _guid; }
+        public string GetGuid() { return _guid; }
 
         ///<summary>Gets the socket of the connected client</summary>
         ///<returns>The socket of the client</return>
-        public Socket GetSocket(){ return _socket; }
+        public Socket GetSocket() { return _socket; }
 
         /// <summary>The socket that this client is connected to</summary>
         /// <returns>Listen socket</returns>
-        public Server GetServer(){ return _server; }
+        public Server GetServer() { return _server; }
 
         /// <summary>Gets if the server is waiting for a pong response</summary>
         /// <returns>If the server is waiting for a pong response</returns>
-        public bool GetIsWaitingForPong(){ return _bIsWaitingForPong; }
+        public bool GetIsWaitingForPong() { return _bIsWaitingForPong; }
 
         /// <summary>Sets if the server is waiting for a pong response</summary>
         /// <param name="bIsWaitingForPong">If the server is waiting for a pong response</param>
-        public void SetIsWaitingForPong(bool bIsWaitingForPong){ _bIsWaitingForPong = bIsWaitingForPong; }
+        public void SetIsWaitingForPong(bool bIsWaitingForPong) { _bIsWaitingForPong = bIsWaitingForPong; }
 
         /// <summary>Called when a message was received from the client</summary>
         private void messageCallback(IAsyncResult AsyncResult)
@@ -349,7 +350,7 @@ namespace GUIDEMO
             }
         }
 
-      
+
     }
 
 
@@ -384,7 +385,7 @@ namespace GUIDEMO
                         IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
                         serverSocket = new TcpListener(ipEndPoint);
                         serverSocket.Start(); Console.WriteLine("Asynchonous server socket is listening at: " + ipEndPoint.Address.ToString());*/
-            
+
             WaitForClients();
         }
 
@@ -400,9 +401,10 @@ namespace GUIDEMO
             {
                 TcpClient clientSocket = serverSocket.EndAcceptTcpClient(asyncResult);
                 if (clientSocket != null) { Console.WriteLine("SERVER RECEIVED CONNECTION REQUEST FROM: " + clientSocket.Client.RemoteEndPoint.ToString()); }
+                BasicPeerNode.Instance.connectedNodes.Add(clientSocket);
                 HandleClientRequest(clientSocket);
             }
-            catch{ throw; }
+            catch { throw; }
             WaitForClients();
         }
 
@@ -430,7 +432,7 @@ namespace GUIDEMO
 
         public static IDGSocketClient Singleton
         {
-            get {  return singleton; }
+            get { return singleton; }
         }
         System.Net.Sockets.TcpClient clientSocket = new System.Net.Sockets.TcpClient();
         NetworkStream networkStream;
@@ -443,7 +445,7 @@ namespace GUIDEMO
 
         public void SuccessfulConnection()
         {
-            BasicPeerNode.Instance.connectedNodes.Add(this.ToString());
+            //BasicPeerNode.Instance.connectedNodes.Add(this.ToString());
             BasicPeerNode.Instance.numberOfNodes++;
             Console.WriteLine(clientSocket.Client.RemoteEndPoint.ToString());
             Console.WriteLine(BasicPeerNode.Instance.numberOfNodes.ToString());
@@ -628,11 +630,11 @@ namespace GUIDEMO
 
         /// <summary>Gets the listen socket</summary>
         /// <returns>The listen socket</returns>
-        public Socket GetSocket(){ return _socket; }
+        public Socket GetSocket() { return _socket; }
 
         /// <summary>Get the listen socket endpoint</summary>
         /// <returns>The listen socket endpoint</returns>
-        public IPEndPoint GetEndPoint(){ return _endPoint; }
+        public IPEndPoint GetEndPoint() { return _endPoint; }
 
         /// <summary>Gets a connected client at the given index</summary>
         /// <param name="Index">The connected client array index</param>
@@ -648,7 +650,7 @@ namespace GUIDEMO
         /// <returns>The client with the given id, return null if no client with the guid could be found</returns>
         public Client GetConnectedClient(string Guid)
         {
-            foreach (Client client in _clients){ if (client.GetGuid() == Guid) return client; }
+            foreach (Client client in _clients) { if (client.GetGuid() == Guid) return client; }
             return null;
         }
 
@@ -657,13 +659,13 @@ namespace GUIDEMO
         /// <returns>The connected client with the given socket, returns null if no client with the socket was found</returns>
         public Client GetConnectedClient(Socket Socket)
         {
-            foreach (Client client in _clients){ if (client.GetSocket() == Socket) return client; }
+            foreach (Client client in _clients) { if (client.GetSocket() == Socket) return client; }
             return null;
         }
 
         /// <summary>Get the number of clients that are connected to the server</summary>
         /// <returns>The number of connected clients</returns>
-        public int GetConnectedClientCount(){ return _clients.Count; }
+        public int GetConnectedClientCount() { return _clients.Count; }
 
         /// <summary>
         /// Starts the listen server when a server object is created
@@ -827,14 +829,14 @@ namespace GUIDEMO
             Console.ReadKey();
         }
     }
-    
+
     public class DNSseedServer
     {
-        List<string> addresses = new List<string>() {"26.67.255.200", "192.168.1.24" };
+        List<string> addresses = new List<string>() { "26.67.255.200", "192.168.1.24" };
         //addresses.Add("127.0.0.1");
         //addresses.Add("192.168.1.24");
     }
-    
+
 
     public class HexadecimalEncoding
     {
@@ -896,7 +898,7 @@ namespace GUIDEMO
         }
 
         public enum TransactionSubType { None, CITIZEN, RULE, DISPUTE, ASSET, ORGANIZATION, PERMISSION, DEFINITION, ELECTION }
-        
+
 
         //TRANSACTION RETURNS STRING
         public Transaction(TransactionSubType txSubType, string fromAddress, string toAddress, double amount, string name, string desc, string action)
@@ -906,7 +908,7 @@ namespace GUIDEMO
                 case TransactionSubType.None:
                     break;
                 case TransactionSubType.CITIZEN:
-                     //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
+                    //(TRANSACTION ID, TRANSACTION SUBTYPE, USERID OF SPONSOR, NEW CITIZEN USERID, AMOUNT OF VOTECOIN, NAME OF CITIZEN, CITIZEN BIO)
                     break;
                 case TransactionSubType.RULE:
                     //TXID, SUBTYTPE, USERID OF RULE INITIATOR, ID OF RULE, AMOUNT POSTED, NAME OF RULE, DESCRIPTION OF RULE, 
@@ -938,16 +940,24 @@ namespace GUIDEMO
             Amount = amount;
             NameOfEntityOrTargetBill = name;
             Desc = desc;
-            Console.WriteLine(DateTime.UtcNow);
-            TxId = Block.GenHash(this.ToString());
-            Console.WriteLine(TxId);
+            //Console.WriteLine(DateTime.UtcNow);
+            //TxId = Block.GenHash(this.ToString());
+            //Console.WriteLine(TxId);
             //DateTimeOffset.FromUnixTimeSeconds(time);
-            TimeStamp = ToDosDateTime(DateTime.UtcNow);
+            //TimeStamp = ToDosDateTime(DateTime.UtcNow);
             Console.WriteLine(TimeStamp.ToString());
+            MakeTransaction(txSubType, fromAddress, toAddress, amount, name, desc, action);
         }
 
+        public static void MakeTransaction(TransactionSubType txSubType, string txFromAddress, string txToAddress, double votecoinAmount, string txName, string txDesc, string txAction)
+        {
+            string txdata = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", txSubType, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
+            string txid = Block.GenHash(txdata);
+            BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
+            Hashtable test = MiningNode.pendingTransactionHashtable;
+            test.Add(txid, txdata);
+        }
 
-        
         public UInt32 ToDosDateTime(DateTime dateTime)
         {
             DateTime startTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
@@ -1082,7 +1092,7 @@ namespace GUIDEMO
 
     }
 
-    
+
     // BARE BONES FUNCTIONALITY
     public sealed class BasicPeerNode
     {
@@ -1099,15 +1109,30 @@ namespace GUIDEMO
         {
             get { return instance; }
         }
-        public static Boolean storageFolderEndsIn1 = false;
+
+        public static int basicPeerNodesCurrentBlockheight = 0;
+
+
         public static string pathString = "blockchaindata";
+        public static Boolean storageFolderEndsIn1 = false;
         public static string endingNumberOfFolder = "";
         //public static string fileName = ".\\"+ pathString + "\\0.dat";
         public static Boolean fullySynced = false;
         //public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
         //public List<string> HardCodedNodes = new List<string>();
-        public IList<string> connectedNodes = new List<string>();
+        public IList<TcpClient> connectedNodes = new List<TcpClient>();
         public int numberOfNodes = 0;
+
+        public static void LoadConfigFile()
+        {
+
+        }
+
+        public static void sendTransactionToNearestMiningNode(string txid, string txdata)
+        {
+
+        }
+
         public static void SaveBinaryFile()
         {
             // Create a hashtable of values that will eventually be serialized.
@@ -1120,13 +1145,14 @@ namespace GUIDEMO
 
             try
             {
-                if(storageFolderEndsIn1 == false)
+                string fileName = basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+                if (storageFolderEndsIn1 == false)
                 {
-                    pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
+                    pathString = System.IO.Path.Combine(".\\blockchaindata", fileName);
                 }
                 else
                 {
-                    pathString = System.IO.Path.Combine(".\\blockchaindata1", "0.bin");
+                    pathString = System.IO.Path.Combine(".\\blockchaindata1", fileName);
                 }
                 
                 //Format the object as Binary  
@@ -1140,26 +1166,9 @@ namespace GUIDEMO
             }
             catch
             {
-                Console.WriteLine("CREATING DIRECTORY AND BINARY FILE");
-                //CREATE DIRECTORY IF NOT FOUND
-                if (storageFolderEndsIn1 == false)
-                {
-                    System.IO.Directory.CreateDirectory("blockchaindata");
-                    pathString = System.IO.Path.Combine(".\\blockchaindata", "0.bin");
-                }
-                else
-                {
-                    System.IO.Directory.CreateDirectory("blockchaindata1");
-                    pathString = System.IO.Path.Combine(".\\blockchaindata1", "0.bin");
-                }
-                //Format the object as Binary  
-                System.IO.Stream ms = File.OpenWrite(pathString);
-                BinaryFormatter formatter = new BinaryFormatter();
-                //It serialize the employee object  
-                formatter.Serialize(ms, addresses);
-                ms.Flush();
-                ms.Close();
-                ms.Dispose();
+                Console.Write("BINARY FILE NOT FOUND");
+                //Console.WriteLine("CREATING DIRECTORY AND BINARY FILE");
+
             }
             finally
             {
@@ -1217,7 +1226,8 @@ namespace GUIDEMO
 
         public static void checkNetworkForNodes(Form1 theForm)
         {
-            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
+            string filename = basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\" + filename;
             string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\";
             Console.WriteLine("CHECK NETWORK FOR NODES");
             //ADD A TALLY FOR EACH CONNECTION AND ADD SERVER NODE TO LIST
@@ -1252,7 +1262,7 @@ namespace GUIDEMO
             }
             else
             {
-                theForm.SetLabel3Text = "NO NODES FOUND";
+                theForm.SetLabel3Text = "NO OTHER NODES FOUND ON NETWORK";
                 // Console.WriteLine("NO NODES FOUND");
                 //CHECK IF ANY EXISTING BLOCK FILES SAVED LOCALLY
                 uint currentBlockheight = 0;
@@ -1263,20 +1273,22 @@ namespace GUIDEMO
                         Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
                         theForm.SetLabel3Text = "BLOCK FILE " + i.ToString() + " EXISTS";
                         using (BinaryReader b = new BinaryReader(File.Open(testingFolderString2 + i.ToString() + ".bin", FileMode.Open))) ;
+                        basicPeerNodesCurrentBlockheight++;
                     }
                     else
                     {
+                        Console.WriteLine("NO BLOCKS FOUND LOCALLY");
                         if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
                             theForm.SetLabel3Text = "CREATING MINING NODE";
-                            MiningNode currentMiningNode = new MiningNode();
+                            //MiningNode currentMiningNode = new MiningNode();
                             //Console.WriteLine("CREATING MINING BLOCK");
                             Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
                             theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
                             Console.WriteLine("CREATING GENESIS BLOCK");
-                            GenesisNode.createGenesisBlock(currentMiningNode);
-                            Console.WriteLine("SAVING GENESIS BINARY FILE");
-                            BasicPeerNode.SaveBinaryFile();
+                            GenesisNode.createGenesisBlock(MiningNode.Instance);
+
+                            //BasicPeerNode.SaveBinaryFile();
                         }
                         if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
@@ -1295,13 +1307,57 @@ namespace GUIDEMO
 
     public class MiningNode
     {
-        
+        private static MiningNode instance = new MiningNode();
+        static MiningNode()
+        {
+        }
+
+        private MiningNode()
+        {
+        }
+
+        public static MiningNode Instance
+        {
+            get { return instance; }
+        }
+
+
         public IList<Transaction> PendingTransactions = new List<Transaction>();
+        public static Hashtable pendingTransactionHashtable = new Hashtable();
 
         public string SendOutCandidateBlock()
         {
+            // BIN
+            Console.WriteLine("SAVE BINARY FILE");
+            string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\" + fileName;
+            //string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
+            //FileStream fs = new FileStream(testingFolderString, FileMode.Open);
+            BinaryFormatter formatter = new BinaryFormatter();
+            try
+            {
+                System.IO.Stream ms = File.OpenWrite(testingFolderString);
+                //It serialize the employee object  
+                formatter.Serialize(ms, pendingTransactionHashtable);
+                ms.Flush();
+                ms.Close();
+                ms.Dispose();
+                //pendingTransactionHashtable = (Hashtable)formatter.Deserialize(fs);
+            }
+            catch (SerializationException ex)
+            {
+                Console.WriteLine("Failed to deserialize. Reason: " + ex.Message);
+                throw;
+            }
+
+            foreach (TcpClient node in BasicPeerNode.Instance.connectedNodes)
+            {
+                Console.WriteLine("TCPClient");
+                //node.Send("MINING NODE SENT OUT CANDIDATE BLOCK HASH");
+            }
             return "trin";
         }
+
 
 
 
@@ -1323,14 +1379,35 @@ namespace GUIDEMO
 
         public static string createGenesisBlock(MiningNode theMiningNode)
         {
+            //GENERATE INITIAL TRANSACTION
             Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
-            theMiningNode.PendingTransactions.Add(trx1);
-            //Transaction trx2 = new Transaction(GenesisUserID, "666453343", 0.0, "LAW", "NOUN", "a law created using this software", "CREATE");
-            //Transaction trx1 = new Transaction("0000000000000000", GenesisUserID, );
+            
+            //theMiningNode.PendingTransactions.Add(trx1);
             var jsonString = JsonConvert.SerializeObject(trx1);
             Console.WriteLine(jsonString);
+
+            //Hashtable addresses = null;
+            string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\" + fileName;
+            //string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
+        
+            Console.WriteLine("SAVING GENESIS BINARY FILE");
+            Console.WriteLine(testingFolderString);
+            string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\blockchaindata\\" + fileName);
+            Console.WriteLine(pathe);
+            //Format the object as Binary  
+            BinaryFormatter formatter = new BinaryFormatter();
+            //System.IO.Stream ms = File.OpenWrite(testingFolderString);
+            FileStream ms = new FileStream(pathe, FileMode.CreateNew);
+            //It serialize the employee object  
+            Hashtable test = MiningNode.pendingTransactionHashtable;
+
+            formatter.Serialize(ms, test);
+            //ms.Flush();
+            ms.Close();
+            //ms.Dispose();
 
             return "test";
         }

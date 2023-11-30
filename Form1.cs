@@ -116,6 +116,7 @@ namespace GUIDEMO
 
                 Console.WriteLine("SETTING UP GENESIS NODE");
                 Console.WriteLine(myblockchain.Difficulty);
+                GenesisNode.createGenesisBlock(MiningNode.Instance);
             }
         }
 
