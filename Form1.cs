@@ -93,47 +93,65 @@ namespace GUIDEMO
                 this.checkBox2.Enabled = false;
                 this.checkBox3.Checked = true;
                 this.checkBox3.Enabled = false;
-                
             }
             else
             {
                 this.checkBox2.Enabled = true;
-                this.checkBox3.Enabled = true;
-                
+                this.checkBox3.Enabled = true; 
             }
         }
 
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //set up node button clicked
+            // SET UP NODE
+            if (this.checkBox4.Checked == true)
+            {
+                // SET UP BASIC PEER NODE
+                var thisBPNode = BasicPeerNode.Instance;
+            }
+
+            if (this.checkBox2.Checked == true)
+            {
+                // SET UP MINING NODE
+                var thisMiningNode = MiningNode.Instance;
+            }
+
             if (this.checkBox1.Checked == true)
             {
-                //set up genesis node
+                // SET UP GENESIS NODE
                 //empty blockchaindata folder
                 Blockchain myblockchain = new Blockchain();
                 //int difficultyTest = myblockchain.Difficulty;
 
                 Console.WriteLine("SETTING UP GENESIS NODE");
-                Console.WriteLine(myblockchain.Difficulty);
+                //Console.WriteLine(myblockchain.Difficulty);
                 GenesisNode.createGenesisBlock(MiningNode.Instance);
             }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            //connect to network button
-            Console.WriteLine("CLIENT CONNECTING TO SELF SERVER NODE");
+            // CONNECT TO NETWORK
+            //Console.WriteLine("CLIENT CONNECTING TO SELF SERVER NODE");
 
-            this.SetLabel3Text = "CREATING CLIENT";
+            //this.SetLabel3Text = "CREATING CLIENT";
             //IDGSocketClient client = new IDGSocketClient();
             //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
             Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
-            if(BasicPeerNode.storageFolderEndsIn1 == true)
+            /*            if(BasicPeerNode.storageFolderEndsIn1 == true)
             {
                 IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, this);
             }
             else
+            {
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, this);
+            }*/
+            try
+            {
+                IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, this);
+            }
+            catch
             {
                 IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, this);
             }
@@ -170,7 +188,7 @@ namespace GUIDEMO
 
         private void button5_Click(object sender, EventArgs e)
         {
-            //make transaction
+            // MAKE TRANSACTION
             var txSubType = this.comboBox1.SelectedValue; //assume CITIZEN for now
             txSubType = "CITIZEN";
             Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
@@ -240,6 +258,12 @@ namespace GUIDEMO
 
         }
 
-
+        private void button6_Click(object sender, EventArgs e)
+        {
+            string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
+            Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
+            Transaction trx3 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
+        }
     }
 }

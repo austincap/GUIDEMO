@@ -12,13 +12,17 @@ using System.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.Net.Sockets;
-using System.Net;
+using System.Net.WebSockets;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 using System.Reflection.Emit;
 using static GUIDEMO.Transaction;
 using static System.Net.WebRequestMethods;
 using File = System.IO.File;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
+using static GUIDEMO.MerkleRoot;
+using NBitcoin;
 
 namespace GUIDEMO
 {
@@ -354,9 +358,55 @@ namespace GUIDEMO
     }
 
 
+   /* public class P2PServer: WebSocketBehavior
+    {
+        bool chainSynched = false;
+        WebSocketServer wss = null;
+
+        public void Start()
+        {
+            wss = new WebSocketServer($"ws://127.0.0.1:{Program.Port}");
+            wss.AddWebSocketService<P2PServer>("/Blockchain");
+            wss.Start();
+            Console.WriteLine($"Started server at ws://127.0.0.1:{Program.Port}");
+        }
+
+        protected override void OnMessage(MessageEventArgs e)
+        {
+            if (e.Data == "Hi Server")
+            {
+                Console.WriteLine(e.Data);
+                Send("Hi Client");
+            }
+            else
+            {
+                Blockchain newChain = JsonConvert.DeserializeObject<Blockchain>(e.Data);
+
+                if (newChain.IsValid() && newChain.Chain.Count > Program.PhillyCoin.Chain.Count)
+                {
+                    List<Transaction> newTransactions = new List<Transaction>();
+                    newTransactions.AddRange(newChain.PendingTransactions);
+                    newTransactions.AddRange(Program.PhillyCoin.PendingTransactions);
+
+                    newChain.PendingTransactions = newTransactions;
+                    Program.PhillyCoin = newChain;
+                }
+
+                if (!chainSynched)
+                {
+                    Send(JsonConvert.SerializeObject(Program.PhillyCoin));
+                    chainSynched = true;
+                }
+            }
+        }
+    }*/
+
+
+
     public class SocketServer
     {
         private static TcpListener serverSocket;
+        public static IDictionary<string, TcpClient> wsDict = new Dictionary<string, TcpClient>();
         public static void StartServer()
         {
             /*            IPHostEntry ipHostEntry = Dns.GetHostEntry("localhost");
@@ -381,10 +431,7 @@ namespace GUIDEMO
                 serverSocket.Start();
                 Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry2.ToString());
             }
-            /*            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-                        IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 3000);
-                        serverSocket = new TcpListener(ipEndPoint);
-                        serverSocket.Start(); Console.WriteLine("Asynchonous server socket is listening at: " + ipEndPoint.Address.ToString());*/
+
 
             WaitForClients();
         }
@@ -400,13 +447,34 @@ namespace GUIDEMO
             try
             {
                 TcpClient clientSocket = serverSocket.EndAcceptTcpClient(asyncResult);
-                if (clientSocket != null) { Console.WriteLine("SERVER RECEIVED CONNECTION REQUEST FROM: " + clientSocket.Client.RemoteEndPoint.ToString()); }
-                BasicPeerNode.Instance.connectedNodes.Add(clientSocket);
+                if (clientSocket != null) { 
+                    Console.WriteLine("SERVER RECEIVED CONNECTION REQUEST FROM: " + clientSocket.Client.RemoteEndPoint.ToString());
+                    SocketServer.wsDict.Add(clientSocket.Client.RemoteEndPoint.ToString(), clientSocket);
+                }
+                BasicPeerNode.connectedNodes.Add(clientSocket);
                 HandleClientRequest(clientSocket);
             }
             catch { throw; }
             WaitForClients();
         }
+        public void RequestLatestBlockheight()
+        {
+            Console.WriteLine("CLIENT REQUEST BLOCKHEIGHT");
+
+        }
+
+        public void Broadcast(string data)
+        {
+            Console.WriteLine("BROADCAST");
+        }
+
+        public static void SendTransaction(string txid, string txdata, TcpClient clientSock)
+        {
+            Console.WriteLine("SERVER BASIC PEER NODE SENDING TRANSACTION");
+
+        }
+
+
 
         private static void HandleClientRequest(TcpClient clientSocket)
         {
@@ -422,6 +490,7 @@ namespace GUIDEMO
     {
         private static IDGSocketClient singleton = new IDGSocketClient();
         private Form1 clientForm;
+        
         static IDGSocketClient()
         {
         }
@@ -440,28 +509,33 @@ namespace GUIDEMO
         {
             this.clientForm = theForm;
             Console.WriteLine("CLIENT SOCKET ATTEMPTING TO CONNECT");
-            clientSocket.Connect(ipAddress, port);
+            try
+            {
+                clientSocket.Connect(ipAddress, port);
+            }
+            catch
+            {
+                Console.WriteLine("NO NODES FOUND");
+            }
+           
         }
 
         public void SuccessfulConnection()
         {
             //BasicPeerNode.Instance.connectedNodes.Add(this.ToString());
-            BasicPeerNode.Instance.numberOfNodes++;
-            Console.WriteLine(clientSocket.Client.RemoteEndPoint.ToString());
-            Console.WriteLine(BasicPeerNode.Instance.numberOfNodes.ToString());
-            this.Send("testdata");
-            BasicPeerNode.checkNetworkForNodes(clientForm);
+            
+            if (clientSocket != null) { 
+                Console.WriteLine("SERVER SUCCESSFULLY CONNECTED TO CLIENT: " + clientSocket.Client.RemoteEndPoint.ToString());
+                BasicPeerNode.Instance.numberOfNodes++;
+                this.Send("testdata");
+            }
         }
         public void Send(string data)
         {
             //Write code here to send data
             Console.WriteLine("IDGSOCKETCLIENT SEND DATA: {0}", data);
         }
-        public void RequestLatestBlockheight()
-        {
-            Console.WriteLine("CLIENT REQUEST BLOCKHEIGHT");
 
-        }
         public void Close()
         {
             Console.WriteLine("CLIENT CLOSE SOCKET CONNECTION");
@@ -954,8 +1028,8 @@ namespace GUIDEMO
             string txdata = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", txSubType, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
             string txid = Block.GenHash(txdata);
             BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
-            Hashtable test = MiningNode.pendingTransactionHashtable;
-            test.Add(txid, txdata);
+            //Hashtable test = MiningNode.pendingTransactionHashtable;
+            //test.Add(txid, txdata);
         }
 
         public UInt32 ToDosDateTime(DateTime dateTime)
@@ -970,7 +1044,7 @@ namespace GUIDEMO
     public class Block
     {
 
-        /*        public class BlockHeader
+        public class BlockHeader
         {
             ushort the_miningnodeversion { get; set; }
             string this_block_proof { get; set; }
@@ -979,7 +1053,7 @@ namespace GUIDEMO
             byte[] this_block_hash { get; set; }
             uint this_block_timestamp { get; set; }
 
-        }*/
+        }
 
         public uint timeStamp;
         public uint TimeStamp
@@ -1111,16 +1185,17 @@ namespace GUIDEMO
         }
 
         public static int basicPeerNodesCurrentBlockheight = 0;
+        public static string blockchainName = "defaultcoin";
 
 
+        //public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
         public static string pathString = "blockchaindata";
         public static Boolean storageFolderEndsIn1 = false;
         public static string endingNumberOfFolder = "";
-        //public static string fileName = ".\\"+ pathString + "\\0.dat";
+  
         public static Boolean fullySynced = false;
-        //public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
-        //public List<string> HardCodedNodes = new List<string>();
-        public IList<TcpClient> connectedNodes = new List<TcpClient>();
+        public IList<string> HardCodedNodes = new List<string>();
+        public static IList<TcpClient> connectedNodes = new List<TcpClient>();
         public int numberOfNodes = 0;
 
         public static void LoadConfigFile()
@@ -1130,7 +1205,12 @@ namespace GUIDEMO
 
         public static void sendTransactionToNearestMiningNode(string txid, string txdata)
         {
-
+            foreach(TcpClient node in connectedNodes)
+            {
+                SocketServer.Se
+                Console.WriteLine("SERVER SENDING TRANSACTION REQ TO CLIENT");
+                //node.SendTransaction(txid, txdata);
+            }
         }
 
         public static void SaveBinaryFile()
@@ -1280,6 +1360,8 @@ namespace GUIDEMO
                         Console.WriteLine("NO BLOCKS FOUND LOCALLY");
                         if (theForm.GetGenesisNodeCheckedStatus == true)
                         {
+                            Console.WriteLine("AUTOCREATING KEY");
+
                             theForm.SetLabel3Text = "CREATING MINING NODE";
                             //MiningNode currentMiningNode = new MiningNode();
                             //Console.WriteLine("CREATING MINING BLOCK");
@@ -1290,13 +1372,13 @@ namespace GUIDEMO
 
                             //BasicPeerNode.SaveBinaryFile();
                         }
-                        if (theForm.GetGenesisNodeCheckedStatus == true)
+                        if (theForm.GetMiningNodeCheckedStatus == true)
                         {
-
+                            var duplicationMiningNode = MiningNode.Instance;
                         }
                         if (theForm.GetDNSseedNodeCheckedStatus == true)
                         {
-                            theForm.SetLabel3Text = "CREATING MINING NODE";
+                            theForm.SetLabel3Text = "CREATING DNS NODE";
                         }
                     }
                 }
@@ -1359,7 +1441,41 @@ namespace GUIDEMO
         }
 
 
+        public void createBlock()
+        { 
+            //string[] arrayOfTransactions = PendingTransactions.ToArray();
+            string[] arrayOfTransactions ={
+                        "fd636107ceb6de2486331ad662955d09abf0414079f2ea59f12da2cfa15c4561",
+                        "088b7d88355a96633fb9586806d75d9c7e6e08b8ddaea8155f4be5ef180df3a7",
+                        "dee47a1af1fbdc1ea8415ad046677234b008aac1a1f46365c5b59a33eca48065",
+                        "126dbb8968504661d68adfdee5d969993e9d5262900b40ba10a92b7403e33164",
+                        "9014543cdfe4f59d03f3e58d0e3cd34b1205e3173080d6252ba2c4d19977b672",
+                        "ab41defef0fd2929868848dd853087e39544772b3469812d3530dc7a93604fd4",
+                        "4ab90706d1162c6ef46bf7f4ab6a39cfae2f47a939a33bb9aed31e3bbe3bd86e",
+                        "c6475296a18ad0423dacc3a94a231a60609f34ff068b7374880a42cbc5316307",
+                        "4059bab2ec2255c0fe0c74afc774cefbbfddb1073745f6f9469c5545938f4891",
+                        "e1622b99c933d518389f1793cac5fe482e5a6e8835d4803bb5deb60634fbc7bd",
+                        "965fc983603545eab3571170940bb77fc301bdd02d4703504f580fdcf57abbfd",
+                        "49f0f8198def669faefe2a9b30310edbd96ee685ea46e91c7a694863dcfa6c40",
+                        "3751b0c8ea70985bcefbe0fd57e5977af32484a80a3bc6c96002ef94782e502b",
+                        "33bb6d11961394dfa6262ca0a9e7d8ef8a090d02486be0067a0eea2462fc53b0",
+                        "44195b102d6adf310530be98c9f216450bb66849030dc37a1bb832a3b1f0aa49",
+                        "890756e5b2010f0a2514155450c9c1a40a5cfcd0f8f863b8820edbd93cb804ef",
+                        "032a93ec78dfa141671e39bc482068d833f8ecf0c1c3daf580fcf97815a37e25",
+                        "fd21f47e89e9bd3dca07e6d8274a49e7838ac8851e96228102f31fd1a7dd755f",
+                        "69d184c03a2ca64a8ddfc84839f7dd71c66ec5a8ecde726e8834bfd71c3ae496",
+                        "57aad7b35748c1d494240b3f4eaad3edd28edcfd645de4cb04aa430b2b870ca5",
+                        "80f5f39bf798a2a13338cbe4f71aaca2c155e5fc9f97b50ca83e770e98deba90"
+                        };
+            //string[] thisBlocksMerkleRoot = merkle.BitcoinMerkleRoot(arrayOfTransactions);
+        }
 
+
+        public void ReceiveTransactionAndPutInPending(Transaction transaction)
+        {
+            Console.WriteLine("MINING NODE RETRIEVED TRANSACTION");
+
+        }
 
 
     }
@@ -1391,11 +1507,11 @@ namespace GUIDEMO
             //Hashtable addresses = null;
             string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
             string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\" + fileName;
-            //string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
+            string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
         
             Console.WriteLine("SAVING GENESIS BINARY FILE");
             Console.WriteLine(testingFolderString);
-            string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\blockchaindata\\" + fileName);
+            string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\" + testingFolderString2);
             Console.WriteLine(pathe);
             //Format the object as Binary  
             BinaryFormatter formatter = new BinaryFormatter();
@@ -1446,7 +1562,7 @@ namespace GUIDEMO
             //BasicPeerNode currentBasicNode = new BasicPeerNode();
 
             
-            theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
+            //theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
             //if (theForm.GetMiningNodeCheckedStatus==true)
             //{
             //    MiningNode currentMiningNode = new MiningNode();
