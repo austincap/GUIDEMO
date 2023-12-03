@@ -13,3 +13,14 @@ C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.exe
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.pdb
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Form1.resources
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Form2.resources
+C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Form3.resources
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\BouncyCastle.Cryptography.dll
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\NBitcoin.dll
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\System.Buffers.dll
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\websocket-sharp.dll
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\BouncyCastle.Cryptography.xml
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\Microsoft.Extensions.Logging.Abstractions.xml
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\NBitcoin.xml
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\System.Buffers.xml
+C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\websocket-sharp.xml

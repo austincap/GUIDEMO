@@ -200,7 +200,7 @@ namespace GUIDEMO
             var txAction = this.comboBox2.GetItemText(this.comboBox2.SelectedItem);
             Transaction newTransaction = new Transaction(TransactionSubType.CITIZEN, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
 
-            Hashtable addresses = null;
+        /*    Hashtable addresses = null;
             string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
             string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
             // Open the file containing the data that you want to deserialize.
@@ -232,7 +232,7 @@ namespace GUIDEMO
             formatter.Serialize(ms, addresses);
             ms.Flush();
             ms.Close();
-            ms.Dispose();
+            ms.Dispose();*/
 
             //Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
             //theMiningNode.PendingTransactions.Add(trx1);

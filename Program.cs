@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using static GUIDEMO.MerkleRoot;
 using NBitcoin;
+//using BouncyCastle.Cryptography;
 
 namespace GUIDEMO
 {
@@ -1020,12 +1021,15 @@ namespace GUIDEMO
             //DateTimeOffset.FromUnixTimeSeconds(time);
             //TimeStamp = ToDosDateTime(DateTime.UtcNow);
             Console.WriteLine(TimeStamp.ToString());
+
             MakeTransaction(txSubType, fromAddress, toAddress, amount, name, desc, action);
         }
 
         public static void MakeTransaction(TransactionSubType txSubType, string txFromAddress, string txToAddress, double votecoinAmount, string txName, string txDesc, string txAction)
         {
             string txdata = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", txSubType, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
+            var jsonString = JsonConvert.SerializeObject(txdata);
+            Console.WriteLine(jsonString);
             string txid = Block.GenHash(txdata);
             BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
             //Hashtable test = MiningNode.pendingTransactionHashtable;
@@ -1184,16 +1188,21 @@ namespace GUIDEMO
             get { return instance; }
         }
 
-        public static int basicPeerNodesCurrentBlockheight = 0;
-        public static string blockchainName = "defaultcoin";
 
+        // BLOCKCHAIN VARIABLES THAT NEED TO BE SYNCED
+        public static int basicPeerNodesCurrentBlockheight = 0;
+        public static int blockchainLatestBlockheight;
+        public static string blockchainName = "defaultdao";
+        public static int blockchainVersion = 1;
+        public static int totalNumberOfUsers = 0;
+        public static Boolean fullySynced = false;
 
         //public IDictionary<string, string> LegalDefinitions = new Dictionary<string, string>();
         public static string pathString = "blockchaindata";
         public static Boolean storageFolderEndsIn1 = false;
         public static string endingNumberOfFolder = "";
   
-        public static Boolean fullySynced = false;
+        
         public IList<string> HardCodedNodes = new List<string>();
         public static IList<TcpClient> connectedNodes = new List<TcpClient>();
         public int numberOfNodes = 0;
@@ -1207,21 +1216,26 @@ namespace GUIDEMO
         {
             foreach(TcpClient node in connectedNodes)
             {
-                SocketServer.Se
+                Console.WriteLine(txid, txdata);
                 Console.WriteLine("SERVER SENDING TRANSACTION REQ TO CLIENT");
                 //node.SendTransaction(txid, txdata);
             }
         }
 
-        public static void SaveBinaryFile()
+        public static void SaveBinaryFile(IList<Transaction> PendingTransactions)
         {
             // Create a hashtable of values that will eventually be serialized.
-            Hashtable addresses = new Hashtable();
+            Hashtable pendingTxs = new Hashtable();
             
             //addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
             //addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
             //addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
             //Create the stream to add object into it. 
+
+            foreach(Transaction tx in PendingTransactions)
+            {
+                pendingTxs.Add("", "");
+            }
 
             try
             {
@@ -1238,8 +1252,7 @@ namespace GUIDEMO
                 //Format the object as Binary  
                 System.IO.Stream ms = File.OpenWrite(pathString);
                 BinaryFormatter formatter = new BinaryFormatter();
-                //It serialize the employee object  
-                formatter.Serialize(ms, addresses);
+                formatter.Serialize(ms, pendingTxs);
                 ms.Flush();
                 ms.Close();
                 ms.Dispose();
@@ -1385,6 +1398,22 @@ namespace GUIDEMO
             }
         }
 
+
+        public static void getBlocks(TcpClient clientRequestingBlocksFrom)
+        {
+
+        }
+
+        public static void getHeaders(TcpClient clientRequestingHeadersFrom)
+        {
+
+        }
+
+
+        public static void checkVoteStatusOfTransaction(Transaction tx)
+        {
+            int totalUserCount;
+        }
     }
 
     public class MiningNode
@@ -1432,7 +1461,7 @@ namespace GUIDEMO
                 throw;
             }
 
-            foreach (TcpClient node in BasicPeerNode.Instance.connectedNodes)
+            foreach (TcpClient node in BasicPeerNode.connectedNodes)
             {
                 Console.WriteLine("TCPClient");
                 //node.Send("MINING NODE SENT OUT CANDIDATE BLOCK HASH");
@@ -1442,9 +1471,11 @@ namespace GUIDEMO
 
 
         public void createBlock()
-        { 
+        {
+            Console.WriteLine("CREATING BLOCK CONTAINING FOLLOWING");
+            Console.WriteLine(PendingTransactions);
             //string[] arrayOfTransactions = PendingTransactions.ToArray();
-            string[] arrayOfTransactions ={
+            string[] arrayOfTransactions1 ={
                         "fd636107ceb6de2486331ad662955d09abf0414079f2ea59f12da2cfa15c4561",
                         "088b7d88355a96633fb9586806d75d9c7e6e08b8ddaea8155f4be5ef180df3a7",
                         "dee47a1af1fbdc1ea8415ad046677234b008aac1a1f46365c5b59a33eca48065",
@@ -1467,11 +1498,18 @@ namespace GUIDEMO
                         "57aad7b35748c1d494240b3f4eaad3edd28edcfd645de4cb04aa430b2b870ca5",
                         "80f5f39bf798a2a13338cbe4f71aaca2c155e5fc9f97b50ca83e770e98deba90"
                         };
-            //string[] thisBlocksMerkleRoot = merkle.BitcoinMerkleRoot(arrayOfTransactions);
+            string thisBlocksMerkleRoot = merkle(arrayOfTransactions1);
+
+            BasicPeerNode.SaveBinaryFile(PendingTransactions);
+        }
+
+        public void createBlockHeader()
+        {
+
         }
 
 
-        public void ReceiveTransactionAndPutInPending(Transaction transaction)
+        public void ReceiveTransactionAndPutInPending(string transactiondata)
         {
             Console.WriteLine("MINING NODE RETRIEVED TRANSACTION");
 
@@ -1495,36 +1533,39 @@ namespace GUIDEMO
 
         public static string createGenesisBlock(MiningNode theMiningNode)
         {
-            //GENERATE INITIAL TRANSACTION
-            Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-            string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-            Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
-            
-            //theMiningNode.PendingTransactions.Add(trx1);
-            var jsonString = JsonConvert.SerializeObject(trx1);
-            Console.WriteLine(jsonString);
-
-            //Hashtable addresses = null;
-            string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
-            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\" + fileName;
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
             string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
-        
-            Console.WriteLine("SAVING GENESIS BINARY FILE");
-            Console.WriteLine(testingFolderString);
-            string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\" + testingFolderString2);
-            Console.WriteLine(pathe);
-            //Format the object as Binary  
-            BinaryFormatter formatter = new BinaryFormatter();
-            //System.IO.Stream ms = File.OpenWrite(testingFolderString);
-            FileStream ms = new FileStream(pathe, FileMode.CreateNew);
-            //It serialize the employee object  
-            Hashtable test = MiningNode.pendingTransactionHashtable;
+            //CHECK IF GENESIS BLOCK ALREADY EXISTS
+            try
+            {
+                FileStream fs = new FileStream(testingFolderString, FileMode.Open);
+                Console.WriteLine("GENESIS BLOCK EXISTS, DELETE TO MAKE NEW ONE");
+            }
+            catch
+            {
+                //GENERATE INITIAL TRANSACTION
+                Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
 
-            formatter.Serialize(ms, test);
-            //ms.Flush();
-            ms.Close();
-            //ms.Dispose();
+                string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+                Console.WriteLine("SAVING GENESIS BINARY FILE");
+                //Console.WriteLine(testingFolderString);
+                string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\" + testingFolderString2);
+                //Console.WriteLine(pathe);
+                //Format the object as Binary  
+                BinaryFormatter formatter = new BinaryFormatter();
+                //System.IO.Stream ms = File.OpenWrite(testingFolderString);
+                FileStream ms = new FileStream(pathe, FileMode.CreateNew);
+                Hashtable test = MiningNode.pendingTransactionHashtable;
 
+                formatter.Serialize(ms, test);
+                //ms.Flush();
+                ms.Close();
+                //ms.Dispose();
+
+               
+            }
             return "test";
         }
     }
@@ -1539,6 +1580,21 @@ namespace GUIDEMO
         byte[] tmpHash;
         public ushort miningnodeversion;
         public uint blockheight;
+
+
+        public static void NbitcoinTests()
+        {
+            Key privateKey = new Key(); // generate a random private key
+            PubKey publicKey = privateKey.PubKey;
+            Console.WriteLine(publicKey.ScriptPubKey);
+            Console.WriteLine(publicKey.GetAddress(ScriptPubKeyType.Legacy, Network.Main)); // 1PUYsjwfNmX64wS368ZR5FMouTtUmvtmTY
+            Console.WriteLine(publicKey.GetAddress(ScriptPubKeyType.Legacy, Network.TestNet)); // n3zWAo2eBnxLr3ueohXnuAa8mTVBhxmPhq
+            var publicKeyHash = new KeyId("14836dbe7f38c5ac3d49e8d790af808a4ee9edcf");
+            var testNetAddress = publicKeyHash.GetAddress(Network.TestNet);
+            var mainNetAddress = publicKeyHash.GetAddress(Network.Main);
+            Console.WriteLine(mainNetAddress.ScriptPubKey);
+            Console.WriteLine(testNetAddress.ScriptPubKey);
+        }
 
     }
 
@@ -1559,20 +1615,21 @@ namespace GUIDEMO
             Form1 theForm = new Form1();
             
             Console.WriteLine("PROGRAM MAIN");
+            //Blockchain.NbitcoinTests();
             //BasicPeerNode currentBasicNode = new BasicPeerNode();
 
-            
+
             //theForm.SetLabel3Text = "CREATING BASIC PEER NODE";
             //if (theForm.GetMiningNodeCheckedStatus==true)
             //{
             //    MiningNode currentMiningNode = new MiningNode();
             //    theForm.SetLabel3Text = "CREATING MINING NODE";
             //}
-       
-            theForm.SetLabel3Text = "CREATING SERVER";
+
+            theForm.SetLabel3Text = "CREATING BASIC PEER NODE SERVER";
             SocketServer.StartServer();
 
-       
+
 
             Application.Run(theForm);
         }
