@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Net;
 using Newtonsoft.Json;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.Net.Sockets;
@@ -23,6 +24,7 @@ using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using static GUIDEMO.MerkleRoot;
 using NBitcoin;
+using Google.Protobuf.WellKnownTypes;
 //using BouncyCastle.Cryptography;
 
 namespace GUIDEMO
@@ -528,6 +530,7 @@ namespace GUIDEMO
             if (clientSocket != null) { 
                 Console.WriteLine("SERVER SUCCESSFULLY CONNECTED TO CLIENT: " + clientSocket.Client.RemoteEndPoint.ToString());
                 BasicPeerNode.Instance.numberOfNodes++;
+                Console.WriteLine(this.ToString());
                 this.Send("testdata");
             }
         }
@@ -1028,12 +1031,13 @@ namespace GUIDEMO
         public static void MakeTransaction(TransactionSubType txSubType, string txFromAddress, string txToAddress, double votecoinAmount, string txName, string txDesc, string txAction)
         {
             string txdata = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", txSubType, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
-            var jsonString = JsonConvert.SerializeObject(txdata);
-            Console.WriteLine(jsonString);
+           // var jsonString = JsonConvert.SerializeObject(txdata);
+            //Console.WriteLine(jsonString);
             string txid = Block.GenHash(txdata);
+            MiningNode.pendingTransactionHashtable.Add(txid, txdata);
+            MiningNode.PendingTransactionsDictionary[txid] = txdata;
             BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
-            //Hashtable test = MiningNode.pendingTransactionHashtable;
-            //test.Add(txid, txdata);
+
         }
 
         public UInt32 ToDosDateTime(DateTime dateTime)
@@ -1050,12 +1054,18 @@ namespace GUIDEMO
 
         public class BlockHeader
         {
-            ushort the_miningnodeversion { get; set; }
+            int the_miningnodeversion { get; set; }
             string this_block_proof { get; set; }
             uint prev_block_height { get; set; }
             byte[] prev_block_hash { get; set; }
             byte[] this_block_hash { get; set; }
             uint this_block_timestamp { get; set; }
+
+        }
+
+        public static void CreateBlockHeader()
+        {
+           // BlockHeader.the_miningnodeversion = BasicPeerNode.blockchainVersion;
 
         }
 
@@ -1162,12 +1172,6 @@ namespace GUIDEMO
 
 
 
-        public string SaveBlockFile(string filename)
-        {
-
-            return "true";
-        }
-
     }
 
 
@@ -1232,9 +1236,10 @@ namespace GUIDEMO
             //addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
             //Create the stream to add object into it. 
 
-            foreach(Transaction tx in PendingTransactions)
+            foreach(KeyValuePair<string, string> entry in MiningNode.PendingTransactionsDictionary)
             {
-                pendingTxs.Add("", "");
+                Console.WriteLine(entry.Value);
+                pendingTxs.Add(entry.Key, entry.Value);
             }
 
             try
@@ -1252,22 +1257,17 @@ namespace GUIDEMO
                 //Format the object as Binary  
                 System.IO.Stream ms = File.OpenWrite(pathString);
                 BinaryFormatter formatter = new BinaryFormatter();
-                formatter.Serialize(ms, pendingTxs);
+                //formatter.Serialize(ms, pendingTxs);
+                formatter.Serialize(ms, MiningNode.pendingTransactionHashtable);
                 ms.Flush();
                 ms.Close();
                 ms.Dispose();
+                Console.WriteLine("BINARY FILE SAVED");
             }
             catch
             {
-                Console.Write("BINARY FILE NOT FOUND");
-                //Console.WriteLine("CREATING DIRECTORY AND BINARY FILE");
-
+                Console.Write("BINARY FILE NOT SAVED");
             }
-            finally
-            {
-
-            }
-
         }
 
         public static void LoadBinaryFile(Form2 form2)
@@ -1276,45 +1276,49 @@ namespace GUIDEMO
             Hashtable addresses = null;
 
             // Open the file containing the data that you want to deserialize.
-            string testingFolderString = ".\\" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
-            FileStream fs = new FileStream(testingFolderString, FileMode.Open);
-            try
+            string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
+            if (File.Exists(testingFolderString))
             {
-                BinaryFormatter formatter = new BinaryFormatter();
+                FileStream fs = new FileStream(testingFolderString, FileMode.Open);
+                try
+                {
+                    Console.WriteLine("DESERIALIZING");
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    // Deserialize the hashtable from the file and
+                    // assign the reference to the local variable.
+                    addresses = (Hashtable)formatter.Deserialize(fs);
+                    // To prove that the table deserialized correctly,
+                    // display the key/value pairs.
+                   
+                    var i = 0;
+                    foreach (DictionaryEntry de in addresses)
+                    {
+                        Console.WriteLine(de.Key);
+                        string shortenedTxid = de.Key.ToString();
+                        shortenedTxid = shortenedTxid.Substring(60);
+                        string entry = "txid: " + shortenedTxid + " represents " + de.Value;
+                        System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+                        label.AutoSize = true;
+                        label.Text = String.Format(entry);
+                        //Position label on screen
+                        label.Left = 10;
+                        label.Top = (i + 1) * 20;
+                        form2.Controls.Add(label);
+                        i += 1;
+                        Console.WriteLine("txid: {0} represents {1}.", de.Key, de.Value);
+                    }
+                }
+                catch (SerializationException e)
+                {
+                    Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
+                    throw;
+                }
+                finally
+                {
+                    fs.Close();
+                }
+            }
 
-                // Deserialize the hashtable from the file and
-                // assign the reference to the local variable.
-                addresses = (Hashtable)formatter.Deserialize(fs);
-            }
-            catch (SerializationException e)
-            {
-                Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
-                throw;
-            }
-            finally
-            {
-                fs.Close();
-            }
-
-            // To prove that the table deserialized correctly,
-            // display the key/value pairs.
-            var i = 0;
-            foreach (DictionaryEntry de in addresses)
-            {
-                string shortenedTxid = de.Key.ToString();
-                shortenedTxid = shortenedTxid.Substring(100);
-                //string entry = "txid: "+ de.Key + " represents " + de.Value;
-                string entry = "txid: " + shortenedTxid + " represents " + de.Value;
-                System.Windows.Forms.Label label = new System.Windows.Forms.Label();
-                label.AutoSize = true;
-                label.Text = String.Format(entry);
-                //Position label on screen
-                label.Left = 10;
-                label.Top = (i + 1) * 20;
-                form2.Controls.Add(label);
-                i += 1;
-                Console.WriteLine("txid: {0} represents {1}.", de.Key, de.Value);
-            }
         }
 
         public static void checkNetworkForNodes(Form1 theForm)
@@ -1336,6 +1340,7 @@ namespace GUIDEMO
                     if (File.Exists(testingFolderString2 + i.ToString() + ".bin"))
                     {
                         Console.WriteLine("BLOCK FILE " + i.ToString() + " EXISTS");
+                        theForm.SetLabel3Text = "BLOCK DATA FOUND LOCALLY";
                         using (BinaryReader b = new BinaryReader(File.Open(testingFolderString, FileMode.Open)));
                     }
                     else
@@ -1434,7 +1439,11 @@ namespace GUIDEMO
 
 
         public IList<Transaction> PendingTransactions = new List<Transaction>();
+        public static Dictionary<string, string> PendingTransactionsDictionary = new Dictionary<string, string>();
         public static Hashtable pendingTransactionHashtable = new Hashtable();
+
+        public string previousBlockHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
 
         public string SendOutCandidateBlock()
         {
@@ -1474,8 +1483,16 @@ namespace GUIDEMO
         {
             Console.WriteLine("CREATING BLOCK CONTAINING FOLLOWING");
             Console.WriteLine(PendingTransactions);
-            //string[] arrayOfTransactions = PendingTransactions.ToArray();
-            string[] arrayOfTransactions1 ={
+            //Console.WriteLine(PendingTransactionsDictionary.Count);
+            string[] arrayOfTransactions = new string[PendingTransactionsDictionary.Count];
+            int i = 0;
+            foreach(KeyValuePair <string, string> entry in PendingTransactionsDictionary)
+            {
+                arrayOfTransactions[i] = entry.Key;
+                i++;
+            }
+            PendingTransactions.ToArray();
+            /*string[] arrayOfTransactions1 ={
                         "fd636107ceb6de2486331ad662955d09abf0414079f2ea59f12da2cfa15c4561",
                         "088b7d88355a96633fb9586806d75d9c7e6e08b8ddaea8155f4be5ef180df3a7",
                         "dee47a1af1fbdc1ea8415ad046677234b008aac1a1f46365c5b59a33eca48065",
@@ -1497,15 +1514,37 @@ namespace GUIDEMO
                         "69d184c03a2ca64a8ddfc84839f7dd71c66ec5a8ecde726e8834bfd71c3ae496",
                         "57aad7b35748c1d494240b3f4eaad3edd28edcfd645de4cb04aa430b2b870ca5",
                         "80f5f39bf798a2a13338cbe4f71aaca2c155e5fc9f97b50ca83e770e98deba90"
-                        };
-            string thisBlocksMerkleRoot = merkle(arrayOfTransactions1);
+                        };*/
+            string thisBlocksMerkleRoot = merkle(arrayOfTransactions);
+            
+            MiningNode.Instance.createBlockHeader(thisBlocksMerkleRoot, i);
 
             BasicPeerNode.SaveBinaryFile(PendingTransactions);
+            MiningNode.Instance.SendOutCandidateBlock();
         }
 
-        public void createBlockHeader()
-        {
+        public class BlockHeader {
+            public int the_miningnodeversion { get; set; }
+            public int prev_block_height { get; set; }
+            public string prev_block_hash { get; set; }
+            public string this_block_hash { get; set; }
+            public int this_block_timestamp { get; set; }
+            public int txcount { get; set; }
+        }
 
+        public void createBlockHeader(string merklerootOfBlock, int txCount)
+        {
+            BlockHeader thisBlockHeader = new BlockHeader();
+            thisBlockHeader.prev_block_height = BasicPeerNode.basicPeerNodesCurrentBlockheight;
+            thisBlockHeader.the_miningnodeversion = BasicPeerNode.blockchainVersion;
+            thisBlockHeader.prev_block_hash = MiningNode.Instance.previousBlockHash;
+            thisBlockHeader.this_block_hash = merklerootOfBlock;
+            thisBlockHeader.this_block_timestamp = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds());
+            thisBlockHeader.txcount = txCount;
+            int difficulty = 1;
+            Console.WriteLine("CREATED BLOCK HEADER");
+            string headerstring = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", thisBlockHeader.prev_block_height, thisBlockHeader.the_miningnodeversion, thisBlockHeader.prev_block_hash, thisBlockHeader.this_block_hash, thisBlockHeader.this_block_timestamp, thisBlockHeader.txcount, difficulty);
+            //MiningNode.PendingTransactionsDictionary.Insert(0, "HEADER", headerstring);
         }
 
 
@@ -1536,35 +1575,34 @@ namespace GUIDEMO
             string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
             string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
             //CHECK IF GENESIS BLOCK ALREADY EXISTS
-            try
+            //Console.WriteLine(Path.GetFullPath(testingFolderString));
+            if (File.Exists(testingFolderString))
             {
-                FileStream fs = new FileStream(testingFolderString, FileMode.Open);
                 Console.WriteLine("GENESIS BLOCK EXISTS, DELETE TO MAKE NEW ONE");
             }
-            catch
-            {
+            else { 
                 //GENERATE INITIAL TRANSACTION
-                Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                //Console.WriteLine(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                string GenesisStartingString = "00000000000000000";
                 string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
-                Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "00000000000000000", GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
-
-                string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
-                Console.WriteLine("SAVING GENESIS BINARY FILE");
-                //Console.WriteLine(testingFolderString);
-                string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\" + testingFolderString2);
-                //Console.WriteLine(pathe);
-                //Format the object as Binary  
-                BinaryFormatter formatter = new BinaryFormatter();
+                Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, GenesisStartingString, GenesisUserID, 0.0, "Genesis Admin", "The ID of the person who created the genesis block.", "CREATE");
+                string dummyID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, GenesisStartingString, dummyID, 0.0, "Genesis Admin", "The ID of the personuyed the genesis block.", "CREATE");
+                MiningNode.Instance.previousBlockHash = GenesisStartingString;
+                MiningNode.Instance.createBlock();
+                //string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
+                //Console.WriteLine("SAVING GENESIS BINARY FILE");
+                //string pathe = Path.Combine("C:\\Users\\Austin\\Documents\\Github\\GUIDEMO\\" + testingFolderString2);
+                //BinaryFormatter formatter = new BinaryFormatter();
                 //System.IO.Stream ms = File.OpenWrite(testingFolderString);
-                FileStream ms = new FileStream(pathe, FileMode.CreateNew);
-                Hashtable test = MiningNode.pendingTransactionHashtable;
-
-                formatter.Serialize(ms, test);
+                //FileStream ms = new FileStream(pathe, FileMode.CreateNew);
+                //Hashtable test = MiningNode.pendingTransactionHashtable;
+                //formatter.Serialize(ms, test);
                 //ms.Flush();
-                ms.Close();
+                //ms.Close();
                 //ms.Dispose();
 
-               
+
             }
             return "test";
         }

@@ -11,6 +11,8 @@ using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
+using Grpc.Net.Client;
+
 
 namespace GUIDEMO
 {
@@ -166,7 +168,6 @@ namespace GUIDEMO
             //view blockchain data button
             Form2 form2 = new Form2();
             form2.Show();
-            Console.WriteLine("TEST");
             BasicPeerNode.LoadBinaryFile(form2);
             //check if local blockchain data available
             //make user select a block
