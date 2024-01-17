@@ -1,0 +1,2 @@
+obj\Debug\Protos/Stake.cs \
+obj\Debug\Protos/StakeGrpc.cs: Protos/stake.proto

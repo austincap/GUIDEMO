@@ -95,11 +95,13 @@ namespace GUIDEMO
                 this.checkBox2.Enabled = false;
                 this.checkBox3.Checked = true;
                 this.checkBox3.Enabled = false;
+                this.button1.Text = "set up genesis node";
             }
             else
             {
                 this.checkBox2.Enabled = true;
-                this.checkBox3.Enabled = true; 
+                this.checkBox3.Enabled = true;
+                this.button1.Text = "set up node";
             }
         }
 

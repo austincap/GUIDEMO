@@ -25,6 +25,7 @@ using System.Xml.Linq;
 using static GUIDEMO.MerkleRoot;
 using NBitcoin;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Net.Client;
 //using BouncyCastle.Cryptography;
 
 namespace GUIDEMO
@@ -1049,7 +1050,7 @@ namespace GUIDEMO
         }
     }
 
-    public class Block
+    public partial class Block
     {
 
         public class BlockHeader
@@ -1668,8 +1669,8 @@ namespace GUIDEMO
             SocketServer.StartServer();
 
 
-
             Application.Run(theForm);
+
         }
     }
 }

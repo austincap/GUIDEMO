@@ -1,0 +1,2 @@
+obj\Debug\Protos/Peer.cs \
+obj\Debug\Protos/PeerGrpc.cs: Protos/peer.proto

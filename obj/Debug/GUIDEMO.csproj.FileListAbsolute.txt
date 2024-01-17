@@ -4,7 +4,6 @@ C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\GUIDEMO.pdb
 C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\Newtonsoft.Json.dll
 C:\Users\Austin\Documents\GitHub\GUIDEMO\bin\Debug\Newtonsoft.Json.xml
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.csproj.AssemblyReference.cache
-C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.csproj.SuggestedBindingRedirects.cache
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.Properties.Resources.resources
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.csproj.GenerateResource.cache
 C:\Users\Austin\Documents\GitHub\GUIDEMO\obj\Debug\GUIDEMO.csproj.CoreCompileInputs.cache

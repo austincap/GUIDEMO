@@ -1,0 +1,2 @@
+obj\Debug\Protos/Hellotest.cs \
+obj\Debug\Protos/HellotestGrpc.cs: Protos/hellotest.proto

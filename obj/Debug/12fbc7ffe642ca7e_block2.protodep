@@ -1,0 +1,2 @@
+obj\Debug\Protos/Block2.cs \
+obj\Debug\Protos/Block2Grpc.cs: Protos/block2.proto
