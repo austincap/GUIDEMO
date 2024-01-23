@@ -113,6 +113,8 @@ namespace GUIDEMO
             {
                 // SET UP BASIC PEER NODE
                 var thisBPNode = BasicPeerNode.Instance;
+                this.SetLabel3Text = "CREATING BASIC PEER NODE SERVER";
+                SocketServer.StartServer();
             }
 
             if (this.checkBox2.Checked == true)
@@ -130,7 +132,7 @@ namespace GUIDEMO
 
                 Console.WriteLine("SETTING UP GENESIS NODE");
                 //Console.WriteLine(myblockchain.Difficulty);
-                GenesisNode.createGenesisBlock(MiningNode.Instance);
+                GenesisNode.createGenesisBlock(MiningNode.Instance, this);
             }
         }
 
@@ -153,11 +155,14 @@ namespace GUIDEMO
             }*/
             try
             {
-                IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, this);
+                Console.WriteLine("CLIENT TRYING TO CONNECT TO PORT 3000");
+                IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
             }
             catch
             {
-                IDGSocketClient.Singleton.Connect("127.0.0.1", 3001, this);
+                Console.WriteLine("CLIENT TRYING TO CONNECT TO PORT 3001");
+                SocketServer.portUsed = 3001;
+                IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
             }
                 
         }

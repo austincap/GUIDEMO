@@ -409,6 +409,7 @@ namespace GUIDEMO
 
     public class SocketServer
     {
+        public static int portUsed = 3001;
         private static TcpListener serverSocket;
         public static IDictionary<string, TcpClient> wsDict = new Dictionary<string, TcpClient>();
         public static void StartServer()
@@ -428,6 +429,7 @@ namespace GUIDEMO
             }
             catch (Exception e)
             {
+                SocketServer.portUsed = 3000;
                 BasicPeerNode.storageFolderEndsIn1 = true;
                 BasicPeerNode.endingNumberOfFolder = "1";
                 IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
@@ -527,12 +529,21 @@ namespace GUIDEMO
         public void SuccessfulConnection()
         {
             //BasicPeerNode.Instance.connectedNodes.Add(this.ToString());
-            
-            if (clientSocket != null) { 
-                Console.WriteLine("SERVER SUCCESSFULLY CONNECTED TO CLIENT: " + clientSocket.Client.RemoteEndPoint.ToString());
-                BasicPeerNode.Instance.numberOfNodes++;
-                Console.WriteLine(this.ToString());
-                this.Send("testdata");
+            try
+            {
+                if (clientSocket.Client.RemoteEndPoint != null)
+                {
+                    Console.WriteLine("SERVER SUCCESSFULLY CONNECTED TO CLIENT: " + clientSocket.Client.RemoteEndPoint.ToString());
+                    BasicPeerNode.Instance.numberOfNodes++;
+                    Console.WriteLine(this.ToString());
+                    this.Send("testdata");
+                }
+
+            }
+            catch
+            {
+                Console.WriteLine("CONNECTION FAILED!");
+
             }
         }
         public void Send(string data)
@@ -1144,31 +1155,6 @@ namespace GUIDEMO
             }
         }
 
-        /*        public static string CreateMerkleRoot(IList<string> trxs)
-                {   // if transaction only 1
-                    if (trxs.Count == 1)
-                    {
-                        var firstTrx = trxs.First();
-                        return firstTrx;
-                    }   // if the number of transaction is odd
-                    if (trxs.Count % 2 == 1)
-                    {
-                        var lastTrx = trxs.Last();
-                        trxs.Add(lastTrx);
-                    }   // looping to create branches
-                    var branches = new List<string>();
-                    for (int i = 0; i < trxs.Count; i += 2)
-                    {
-                        // concat each pair
-                        var pair = string.Concat(trxs[i], trxs[i + 1]);
-                        Console.Write(trxs[i] + "+" + trxs[i + 1]); Console.Write("   ");
-                        branches.Add(pair);
-                    }
-
-                    Console.WriteLine();
-                    var result = CreateMerkleRoot(branches);
-                    return result;
-                }*/
 
 
 
@@ -1387,7 +1373,7 @@ namespace GUIDEMO
                             Console.WriteLine("BLOCK FILE " + i.ToString() + " DOESNT EXIST AND THIS IS NOW THE GENESIS NODE");
                             theForm.SetLabel3Text = "CREATING GENESIS BLOCK";
                             Console.WriteLine("CREATING GENESIS BLOCK");
-                            GenesisNode.createGenesisBlock(MiningNode.Instance);
+                            GenesisNode.createGenesisBlock(MiningNode.Instance, theForm);
 
                             //BasicPeerNode.SaveBinaryFile();
                         }
@@ -1444,7 +1430,7 @@ namespace GUIDEMO
         public static Hashtable pendingTransactionHashtable = new Hashtable();
 
         public string previousBlockHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
+        public string thischainname = "defaultdao";
 
         public string SendOutCandidateBlock()
         {
@@ -1531,6 +1517,9 @@ namespace GUIDEMO
             public string this_block_hash { get; set; }
             public int this_block_timestamp { get; set; }
             public int txcount { get; set; }
+            public string this_chain_name { get; set; }
+            public int difficulty { get; set; }
+
         }
 
         public void createBlockHeader(string merklerootOfBlock, int txCount)
@@ -1542,10 +1531,13 @@ namespace GUIDEMO
             thisBlockHeader.this_block_hash = merklerootOfBlock;
             thisBlockHeader.this_block_timestamp = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds());
             thisBlockHeader.txcount = txCount;
-            int difficulty = 1;
+            thisBlockHeader.this_chain_name = this.thischainname;
+            thisBlockHeader.difficulty = 1;
             Console.WriteLine("CREATED BLOCK HEADER");
-            string headerstring = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", thisBlockHeader.prev_block_height, thisBlockHeader.the_miningnodeversion, thisBlockHeader.prev_block_hash, thisBlockHeader.this_block_hash, thisBlockHeader.this_block_timestamp, thisBlockHeader.txcount, difficulty);
-            //MiningNode.PendingTransactionsDictionary.Insert(0, "HEADER", headerstring);
+            string headerstring = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}", thisBlockHeader.prev_block_height, thisBlockHeader.the_miningnodeversion, thisBlockHeader.prev_block_hash, thisBlockHeader.this_block_hash, thisBlockHeader.this_block_timestamp, thisBlockHeader.this_chain_name, thisBlockHeader.difficulty, thisBlockHeader.txcount);
+            Console.WriteLine(headerstring);
+            Transaction headerTransaction = new Transaction(Transaction.TransactionSubType.CITIZEN, thisBlockHeader.prev_block_hash, thisBlockHeader.this_block_hash, thisBlockHeader.this_block_timestamp, thisBlockHeader.this_chain_name,"difficult", "eee");
+            MiningNode.Instance.PendingTransactions.Insert(0, headerTransaction);
         }
 
 
@@ -1571,7 +1563,7 @@ namespace GUIDEMO
         }
 
 
-        public static string createGenesisBlock(MiningNode theMiningNode)
+        public static string createGenesisBlock(MiningNode theMiningNode, Form1 theForm)
         {
             string testingFolderString = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder + "\\0.bin";
             string testingFolderString2 = ".\\blockchaindata" + BasicPeerNode.endingNumberOfFolder;
@@ -1590,6 +1582,7 @@ namespace GUIDEMO
                 string dummyID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
                 Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, GenesisStartingString, dummyID, 0.0, "Genesis Admin", "The ID of the personuyed the genesis block.", "CREATE");
                 MiningNode.Instance.previousBlockHash = GenesisStartingString;
+                MiningNode.Instance.thischainname = theForm.textBox4.Text;
                 MiningNode.Instance.createBlock();
                 //string fileName = BasicPeerNode.basicPeerNodesCurrentBlockheight.ToString() + ".bin";
                 //Console.WriteLine("SAVING GENESIS BINARY FILE");
@@ -1665,8 +1658,8 @@ namespace GUIDEMO
             //    theForm.SetLabel3Text = "CREATING MINING NODE";
             //}
 
-            theForm.SetLabel3Text = "CREATING BASIC PEER NODE SERVER";
-            SocketServer.StartServer();
+            
+            //SocketServer.StartServer();
 
 
             Application.Run(theForm);
