@@ -12,6 +12,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using Grpc.Net.Client;
+using System.Linq;
 
 
 namespace GUIDEMO
@@ -19,6 +20,8 @@ namespace GUIDEMO
 
     public partial class Form1 : Form
     {
+
+        private System.Windows.Forms.Timer holder;
         public Form1()
         {
             InitializeComponent();
@@ -71,6 +74,12 @@ namespace GUIDEMO
             //you always need to have a basic peer node to participate in network
             this.checkBox4.Checked = true;
             this.checkBox4.Enabled = true;
+
+            var fileCount = Directory.EnumerateFiles(Path.Combine(System.IO.Directory.GetCurrentDirectory(), "blockchaindata")).Count();
+            if (fileCount == 0)
+                this.SetLabel3Text = "blockchaindata folder empty";
+            else
+                this.SetLabel3Text = "delete existing blocks to make genesis node";
             //on load disable connect to network button until your node is set up
             //this.button2.Enabled = false;
         }
@@ -114,7 +123,7 @@ namespace GUIDEMO
                 // SET UP BASIC PEER NODE
                 var thisBPNode = BasicPeerNode.Instance;
                 this.SetLabel3Text = "CREATING BASIC PEER NODE SERVER";
-                SocketServer.StartServer();
+                SocketServer.StartServer(this);
             }
 
             if (this.checkBox2.Checked == true)
@@ -130,7 +139,7 @@ namespace GUIDEMO
                 Blockchain myblockchain = new Blockchain();
                 //int difficultyTest = myblockchain.Difficulty;
 
-                Console.WriteLine("SETTING UP GENESIS NODE");
+                this.SetLabel3Text = "SETTING UP GENESIS NODE";
                 //Console.WriteLine(myblockchain.Difficulty);
                 GenesisNode.createGenesisBlock(MiningNode.Instance, this);
             }
@@ -144,7 +153,7 @@ namespace GUIDEMO
             //this.SetLabel3Text = "CREATING CLIENT";
             //IDGSocketClient client = new IDGSocketClient();
             //CLIENT SHOULD ITERATE THOUGH HARDCODED DNS LIST FIRST
-            Console.WriteLine("CHECK NETWORK FOR ACTIVE NODES");
+            this.SetLabel3Text = "CHECK NETWORK FOR ACTIVE NODES";
             /*            if(BasicPeerNode.storageFolderEndsIn1 == true)
             {
                 IDGSocketClient.Singleton.Connect("127.0.0.1", 3000, this);
@@ -155,12 +164,12 @@ namespace GUIDEMO
             }*/
             try
             {
-                Console.WriteLine("CLIENT TRYING TO CONNECT TO PORT 3000");
+                this.SetLabel3Text = "CLIENT TRYING TO CONNECT TO PORT 3000";
                 IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
             }
             catch
             {
-                Console.WriteLine("CLIENT TRYING TO CONNECT TO PORT 3001");
+                this.SetLabel3Text = "CLIENT TRYING TO CONNECT TO PORT 3001";
                 SocketServer.portUsed = 3001;
                 IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
             }
@@ -268,10 +277,21 @@ namespace GUIDEMO
 
         private void button6_Click(object sender, EventArgs e)
         {
+            this.SetLabel3Text = "MAKING 3 TRANSACTIONS";
             string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
             Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
             Transaction trx3 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
+        }
+
+        private void label11_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            MiningNode.Instance.SendOutCandidateBlock();
         }
     }
 }

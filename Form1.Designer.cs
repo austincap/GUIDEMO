@@ -58,6 +58,7 @@
             this.label12 = new System.Windows.Forms.Label();
             this.button6 = new System.Windows.Forms.Button();
             this.textBox4 = new System.Windows.Forms.TextBox();
+            this.button7 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -319,6 +320,7 @@
             this.label11.Size = new System.Drawing.Size(13, 13);
             this.label11.TabIndex = 28;
             this.label11.Text = "0";
+            this.label11.Click += new System.EventHandler(this.label11_Click);
             // 
             // label12
             // 
@@ -346,11 +348,22 @@
             this.textBox4.Size = new System.Drawing.Size(135, 20);
             this.textBox4.TabIndex = 31;
             // 
+            // button7
+            // 
+            this.button7.Location = new System.Drawing.Point(40, 418);
+            this.button7.Name = "button7";
+            this.button7.Size = new System.Drawing.Size(135, 35);
+            this.button7.TabIndex = 32;
+            this.button7.Text = "Create candidate block from pending txs";
+            this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.button7_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(860, 482);
+            this.Controls.Add(this.button7);
             this.Controls.Add(this.textBox4);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.label12);
@@ -418,10 +431,11 @@
         private System.Windows.Forms.TextBox textBox3;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.Button button6;
         public System.Windows.Forms.TextBox textBox4;
+        public System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Button button7;
     }
 }
 
