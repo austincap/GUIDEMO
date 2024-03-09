@@ -294,6 +294,7 @@ namespace GUIDEMO
             IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
             var porttry1 = 3000;
             var porttry2 = 3001;
+            var porttry3 = 3002;
             try
             {
                 IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry1);
@@ -303,13 +304,26 @@ namespace GUIDEMO
             }
             catch (Exception e)
             {
-                SocketServer.portUsed = 3000;
-                BasicPeerNode.storageFolderEndsIn1 = true;
-                BasicPeerNode.endingNumberOfFolder = "1";
-                IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
-                serverSocket = new TcpListener(ipEndPoint);
-                serverSocket.Start();
-                Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry2.ToString());
+                try
+                {
+                    SocketServer.portUsed = 3000;
+                    BasicPeerNode.storageFolderEndsIn1 = true;
+                    BasicPeerNode.endingNumberOfFolder = "1";
+                    IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry2);
+                    serverSocket = new TcpListener(ipEndPoint);
+                    serverSocket.Start();
+                    Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry2.ToString());
+                }
+                catch (Exception ex)
+                {
+                    SocketServer.portUsed = 3002;
+                    BasicPeerNode.storageFolderEndsIn1 = true;
+                    BasicPeerNode.endingNumberOfFolder = "2";
+                    IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, porttry3);
+                    serverSocket = new TcpListener(ipEndPoint);
+                    serverSocket.Start();
+                    Console.WriteLine("ASYNC SERVER LISTENING AT PORT: " + porttry3.ToString());
+                }
             }
 
 
@@ -563,16 +577,19 @@ namespace GUIDEMO
 
             MakeTransaction(txSubType, fromAddress, toAddress, amount, name, desc, action);
         }
+        //{txid, {timestamp, fromaddress, toaddress,}}
+        //
+
 
         public static void MakeTransaction(TransactionSubType txSubType, string txFromAddress, string txToAddress, double votecoinAmount, string txName, string txDesc, string txAction)
         {
             string txdata = string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", txSubType, txFromAddress, txToAddress, votecoinAmount, txName, txDesc, txAction);
-           // var jsonString = JsonConvert.SerializeObject(txdata);
+            // var jsonString = JsonConvert.SerializeObject(txdata);
             //Console.WriteLine(jsonString);
             string txid = Block.GenHash(txdata);
             MiningNode.pendingTransactionHashtable.Add(txid, txdata);
             MiningNode.PendingTransactionsDictionary[txid] = txdata;
-            BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
+            //BasicPeerNode.sendTransactionToNearestMiningNode(txid, txdata);
 
         }
 

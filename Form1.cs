@@ -169,9 +169,19 @@ namespace GUIDEMO
             }
             catch
             {
-                this.SetLabel3Text = "CLIENT TRYING TO CONNECT TO PORT 3001";
-                SocketServer.portUsed = 3001;
-                IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
+                try
+                {
+                    this.SetLabel3Text = "CLIENT TRYING TO CONNECT TO PORT 3001";
+                    SocketServer.portUsed = 3001;
+                    IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
+                }
+                catch
+                {
+                    this.SetLabel3Text = "CLIENT TRYING TO CONNECT TO PORT 3002";
+                    SocketServer.portUsed = 3002;
+                    IDGSocketClient.Singleton.Connect("127.0.0.1", SocketServer.portUsed, this);
+                }
+
             }
                 
         }
@@ -280,8 +290,8 @@ namespace GUIDEMO
             this.SetLabel3Text = "MAKING 3 TRANSACTIONS";
             string GenesisUserID = GenHash(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             Transaction trx1 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
-            Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
-            Transaction trx3 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "guyt", "The ID of the person who created the genesis block.", "CREATE");
+            Transaction trx2 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "new guy", "The ID of the person who created the genesis block.", "CREATE");
+            Transaction trx3 = new Transaction(TransactionSubType.CITIZEN, "23423423423423423", "32423423423", 0.0, "new guy 3", "The ID of the person who created the genesis block.", "CREATE");
         }
 
         private void label11_Click(object sender, EventArgs e)
